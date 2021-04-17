@@ -1,14 +1,13 @@
 from transformers import AutoTokenizer
-from finetune import AmazonReview
+from transfer_classifier.amazon_review import AmazonReview
 
 
-class TestTransfer():
-
-    def test_load(self):
+class TestTransfer:
+    def test_load(self) -> None:
         review = AmazonReview(lang="ja")
         assert len(review.load("validation")) > 0
 
-    def test_tokenize(self):
+    def test_tokenize(self) -> None:
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
@@ -23,7 +22,7 @@ class TestTransfer():
         assert len(dataset) == len(tokenized["token_type_ids"])
         assert len(dataset) == len(tokenized["attention_mask"])
 
-    def test_labels(self):
+    def test_labels(self) -> None:
         review = AmazonReview(lang="ja")
         dataset = review.load("validation")
         labeled = review.labels(dataset)
@@ -32,20 +31,23 @@ class TestTransfer():
 
         # star 1 = 0
         assert len(labeled.filter(lambda s: s["stars"] == 1)) > 0
-        assert len(labeled.filter(lambda s: s["stars"] == 1)) ==\
-               len(labeled.filter(lambda s: s["labels"] == 0))
+        assert len(labeled.filter(lambda s: s["stars"] == 1)) == len(
+            labeled.filter(lambda s: s["labels"] == 0)
+        )
 
         # star 5 = 1
         assert len(labeled.filter(lambda s: s["stars"] == 5)) > 0
-        assert len(labeled.filter(lambda s: s["stars"] == 5)) ==\
-               len(labeled.filter(lambda s: s["labels"] == 1))
+        assert len(labeled.filter(lambda s: s["stars"] == 5)) == len(
+            labeled.filter(lambda s: s["labels"] == 1)
+        )
 
         # star 5 = 1
         assert len(labeled.filter(lambda s: 1 < s["stars"] < 5)) > 0
-        assert len(labeled.filter(lambda s: 1 < s["stars"] < 5)) ==\
-               len(labeled.filter(lambda s: s["labels"] == -1))
+        assert len(labeled.filter(lambda s: 1 < s["stars"] < 5)) == len(
+            labeled.filter(lambda s: s["labels"] == -1)
+        )
 
-    def test_format(self):
+    def test_format(self) -> None:
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         review = AmazonReview(lang="ja")
