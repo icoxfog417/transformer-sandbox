@@ -24,6 +24,8 @@ dataset = dataset.train_test_split(test_size=0.2)
 dataset_train = review.format(dataset["train"], tokenizer)
 dataset_validation = review.format(dataset["test"], tokenizer)
 
+print(review.statistics(dataset_train))
+print(review.statistics(dataset_validation))
 
 # Define Trainer parameters
 def compute_metrics(eval: EvalPrediction) -> Dict[str, float]:
