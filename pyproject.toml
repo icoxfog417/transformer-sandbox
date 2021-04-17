@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "transformer-sandbox"
+version = "0.1.0"
+description = "transformer sandbox"
+authors = ["icoxfog417 <icoxfog417@yahoo.co.jp>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+transformers = "^4.5.0"
+torch = "^1.8.1"
+fugashi = "^1.1.0"
+ipadic = "^1.0.0"
+pandas = "^1.2.4"
+numpy = "^1.20.2"
+scikit-learn = "^0.24.1"
+datasets = "^1.5.0"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.9.1"
+pytest = "^6.2.3"
+pysen = {version = "^0.9.1", extras = ["lint"]}
+pysen-ls = "^0.1.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pysen]
+version = "0.9"
+
+[tool.pysen.lint]
+enable_black = true
+enable_flake8 = true
+enable_isort = true
+enable_mypy = true
+mypy_preset = "strict"
+line_length = 88
+py_version = "py39"
+[[tool.pysen.lint.mypy_targets]]
+  paths = ["."]
