@@ -130,3 +130,4 @@ dmypy.json
 output/
 tmp_trainer/
 .vscode/
+augmented_*/

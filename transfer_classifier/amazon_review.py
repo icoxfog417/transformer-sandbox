@@ -1,11 +1,9 @@
+from typing import Any, Dict, List
+
 import numpy as np
-from typing import Dict
-from typing import List
-from typing import Any
 from datasets import load_dataset
 from datasets.arrow_dataset import Dataset
-from transformers.tokenization_utils import PreTrainedTokenizer
-from transformers.tokenization_utils import BatchEncoding
+from transformers.tokenization_utils import BatchEncoding, PreTrainedTokenizer
 
 
 class AmazonReview:
@@ -20,11 +18,15 @@ class AmazonReview:
             return dataset
 
     def tokenize(
-        self, dataset: Dataset, tokenizer: PreTrainedTokenizer, batched: bool = True
+        self,
+        dataset: Dataset,
+        tokenizer: PreTrainedTokenizer,
+        target: str = "review_title",
+        batched: bool = True,
     ) -> Dataset:
         def encode(examples: Dict[str, List[Any]]) -> BatchEncoding:
             tokenized = tokenizer(
-                examples["review_title"],
+                examples[target],
                 truncation=True,
                 max_length=512,
                 padding="max_length",
@@ -49,9 +51,13 @@ class AmazonReview:
         return dataset.map(encode, batched=batched)
 
     def format(
-        self, dataset: Dataset, tokenizer: PreTrainedTokenizer, batched: bool = True
+        self,
+        dataset: Dataset,
+        tokenizer: PreTrainedTokenizer,
+        target: str = "review_title",
+        batched: bool = True,
     ) -> Dataset:
-        tokenized = self.tokenize(dataset, tokenizer, batched)
+        tokenized = self.tokenize(dataset, tokenizer, target, batched)
         labeled = self.labels(tokenized, batched)
         filtered = labeled.filter(lambda example: example["labels"] >= 0)
         filtered.set_format(

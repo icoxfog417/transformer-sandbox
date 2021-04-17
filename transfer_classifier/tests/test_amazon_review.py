@@ -2,7 +2,7 @@ from transformers import AutoTokenizer
 from transfer_classifier.amazon_review import AmazonReview
 
 
-class TestTransfer:
+class TestAmazonReview:
     def test_load(self) -> None:
         review = AmazonReview(lang="ja")
         assert len(review.load("validation")) > 0
