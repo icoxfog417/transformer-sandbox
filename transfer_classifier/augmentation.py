@@ -36,7 +36,7 @@ dataset_partial = dataset_train.train_test_split(test_size=0.2)["test"]
 augmentor = Augmentor(lang="ja", model=model_augment, tokenizer=tokenizer)
 augmenteds = []
 
-for i in range(1):
+for i in range(2):
     augmented = augmentor.augment(dataset_partial, "review_title").flatten_indices()
     augmenteds.append(augmented)
 
