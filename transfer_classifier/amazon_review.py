@@ -60,9 +60,13 @@ class AmazonReview:
         tokenized = self.tokenize(dataset, tokenizer, target, batched)
         labeled = self.labels(tokenized, batched)
         filtered = labeled.filter(lambda example: example["labels"] >= 0)
+        columns = ["input_ids", "attention_mask", "labels"]
+        if "token_type_ids" in filtered.column_names:
+            columns += ["token_type_ids"]
+
         filtered.set_format(
             type="torch",
-            columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
+            columns=columns,
         )
         return filtered
 
