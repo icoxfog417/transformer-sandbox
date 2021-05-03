@@ -1,74 +1,56 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Callable
 
 import numpy as np
 from datasets import load_dataset
 from datasets.arrow_dataset import Dataset
 from transformers.tokenization_utils import BatchEncoding, PreTrainedTokenizer
+from transfer_classifier.classification_dataset_preprocessor import (
+    ClassificationDatasetPreprocessor,
+)
 
 
-class AmazonReview:
-    def __init__(self, lang: str = "ja"):
-        self.lang = lang
+class AmazonReview(ClassificationDatasetPreprocessor):
+    def __init__(
+        self,
+        input_column: str,
+        label_column: str,
+        tokenizer: PreTrainedTokenizer,
+        truncation=True,
+        max_length=512,
+        padding="max_length",
+        batched: bool = True,
+        lang: str = "ja",
+    ):
+        super().__init__(
+            input_column=input_column,
+            label_column=label_column,
+            tokenizer=tokenizer,
+            truncation=truncation,
+            max_length=max_length,
+            padding=padding,
+            label_function=self.to_label,
+            batched=batched,
+            lang=lang,
+        )
 
-    def load(self, split: str, shuffle: bool = True) -> Dataset:
+    def load(
+        self, split: str, filter_medium_star: bool = True, shuffle: bool = True
+    ) -> Dataset:
         dataset = load_dataset("amazon_reviews_multi", self.lang, split=split)
+        if filter_medium_star:
+            dataset = dataset.filter(lambda example: example["stars"] in (1, 5))
         if shuffle:
             return dataset.shuffle()
         else:
             return dataset
 
-    def tokenize(
-        self,
-        dataset: Dataset,
-        tokenizer: PreTrainedTokenizer,
-        target: str = "review_title",
-        batched: bool = True,
-    ) -> Dataset:
-        def encode(examples: Dict[str, List[Any]]) -> BatchEncoding:
-            tokenized = tokenizer(
-                examples[target],
-                truncation=True,
-                max_length=512,
-                padding="max_length",
-            )
-            return tokenized
-
-        return dataset.map(encode, batched=batched)
-
-    def labels(self, dataset: Dataset, batched: bool = True) -> Dataset:
-        def convert_star(star: int) -> int:
-            if 1 < star < 5:
-                return -1
-            elif star == 1:
-                return 0
-            else:
-                return 1
-
-        def encode(examples: Dict[str, List[Any]]) -> Dict[str, np.ndarray]:
-            labels = {"labels": np.array([convert_star(s) for s in examples["stars"]])}
-            return labels
-
-        return dataset.map(encode, batched=batched)
-
-    def format(
-        self,
-        dataset: Dataset,
-        tokenizer: PreTrainedTokenizer,
-        target: str = "review_title",
-        batched: bool = True,
-    ) -> Dataset:
-        tokenized = self.tokenize(dataset, tokenizer, target, batched)
-        labeled = self.labels(tokenized, batched)
-        filtered = labeled.filter(lambda example: example["labels"] >= 0)
-        columns = ["input_ids", "attention_mask", "labels"]
-        if "token_type_ids" in filtered.column_names:
-            columns += ["token_type_ids"]
-
-        filtered.set_format(
-            type="torch",
-            columns=columns,
-        )
-        return filtered
+    def to_label(self, star: int) -> int:
+        if 1 < star < 5:
+            return -1
+        elif star == 1:
+            return 0
+        else:
+            return 1
 
     def statistics(self, formatted: Dataset) -> Dict[str, int]:
         positives = len([e for e in formatted if e["labels"].item() == 1])

@@ -1,4 +1,3 @@
-from typing import Union
 from typing import Tuple
 from typing import Dict
 from typing import Any
@@ -8,75 +7,58 @@ import random
 from fugashi import GenericTagger
 import torch
 from datasets.arrow_dataset import Dataset
+from datasets import concatenate_datasets
 from transformers import PreTrainedModel
 from transformers.tokenization_utils import PreTrainedTokenizer
 from transformers.tokenization_utils import BatchEncoding
+from transfer_classifier.classification_dataset_preprocessor import (
+    ClassificationDatasetPreprocessor,
+)
 
 
 class Augmentor:
-    def __init__(
-        self, lang: str, model: PreTrainedModel, tokenizer: PreTrainedTokenizer
-    ):
-        self.lang = lang
-        self.tagger = GenericTagger()  # Only Japanese support now
-        self.model = model
-        self.tokenizer = tokenizer
+    def __init__(self):
+        self.__AUGMENTATION_VALID__ = "VALID"
 
     def augment(
-        self, dataset: Dataset, target: str, num_replace: int = 1
+        self,
+        dataset: Dataset,
+        preprocessor: ClassificationDatasetPreprocessor,
+        num_trial: int = 3,
+        discriminator: PreTrainedModel = None,
+        threshold: float = 0.8,
     ) -> BatchEncoding:
-        def replace_words(example: Dict[str, Any]) -> Dict[str, Any]:
-            _num_replace, text = self.replace_words(example[target], num_replace)
-            example["augmented"] = True if _num_replace > 0 else False
-            example[target] = text
-            return example
+        augmented_samples = None
 
-        replaced = dataset.map(replace_words)
-        augmented = replaced.filter(lambda e: e["augmented"])
-        augmented = augmented.remove_columns(["augmented"])
-        return augmented
+        if discriminator is not None and preprocessor is None:
+            raise Exception("To use discriminator, preprocessor should be required.")
 
-    def replace_words(self, text: str, num_replace: int) -> Tuple[int, str]:
-        _text = text
-        replaced = []
+        for i in range(num_trial):
+            augmented = self.generate(dataset, preprocessor)
+            if discriminator is not None and preprocessor is not None:
+                formatted = preprocessor.format(augmented)
+                prediction = discriminator.predict(formatted)
+                over_threshold_index = torch.where(prediction >= threshold)
+                augmented = augmented.select(over_threshold_index)
 
-        for i in range(num_replace):
-            words = []
-            replace_indexes = []
-            for i, w in enumerate(self.tagger(_text)):
-                words.append(w.surface)
-                if w.feature[0] in ("名詞", "動詞", "形容詞", "副詞") and i not in replaced:
-                    replace_indexes.append(i)
+            augmented = augmented.filter(lambda e: e[self.__AUGMENTATION_VALID__])
+            if augmented_samples is None:
+                augmented_samples = augmented
+            else:
+                augmented_samples = concatenate_datasets([augmented_samples, augmented])
 
-            if len(replace_indexes) == 0:
+            if len(dataset) == len(augmented_samples):
                 break
 
-            index = random.choice(replace_indexes)
-            words[index] = self.tokenizer.mask_token
-
-            if self.lang == "ja":
-                _text = "".join(words)
-            else:
-                _text = " ".join(words)
-
-            encoded = self.tokenizer.encode(_text, return_tensors="pt")
-            mask_token_index = torch.where(encoded == self.tokenizer.mask_token_id)[1]
-            logits = self.model(encoded).logits
-            masked_token_logits = logits[0, mask_token_index, :]
-
-            top_ten_tokens = (
-                torch.topk(masked_token_logits, 10, dim=1).indices[0].tolist()
+        if augmented_samples is not None:
+            augmented_samples = augmented_samples.remove_columns(
+                [self.__AUGMENTATION_VALID__]
             )
-            random.shuffle(top_ten_tokens)
-            for token in top_ten_tokens:
-                _text = _text.replace(
-                    self.tokenizer.mask_token,
-                    self.tokenizer.decode([token]),
-                )
-                if text != _text:
-                    break
+            augmented_samples = augmented_samples.flatten_indices()
 
-            if text != _text:
-                replaced.append(index)
+        return augmented_samples
 
-        return (len(replaced), _text)
+    def generate(
+        self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor
+    ) -> BatchEncoding:
+        raise NotImplementedError("Augmentor subclass should implement augment_sample.")
