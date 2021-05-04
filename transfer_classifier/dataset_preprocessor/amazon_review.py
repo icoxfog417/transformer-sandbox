@@ -1,12 +1,11 @@
-from typing import Any, Dict, List, Callable
+from typing import Dict
 
-import numpy as np
 from datasets import load_dataset
 from datasets.arrow_dataset import Dataset
-from transformers.tokenization_utils import BatchEncoding, PreTrainedTokenizer
 from transfer_classifier.dataset_preprocessor.classification_dataset_preprocessor import (
     ClassificationDatasetPreprocessor,
 )
+from transformers.tokenization_utils import PreTrainedTokenizer
 
 
 class AmazonReview(ClassificationDatasetPreprocessor):
@@ -33,9 +32,7 @@ class AmazonReview(ClassificationDatasetPreprocessor):
             lang=lang,
         )
 
-    def load(
-        self, split: str, filter_medium_star: bool = True, shuffle: bool = True
-    ) -> Dataset:
+    def load(self, split: str, filter_medium_star: bool = True, shuffle: bool = True) -> Dataset:
         dataset = load_dataset("amazon_reviews_multi", self.lang, split=split)
         if filter_medium_star:
             dataset = dataset.filter(lambda example: example["stars"] in (1, 5))

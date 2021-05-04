@@ -1,16 +1,7 @@
-import os
-
-import torch
 import pandas as pd
-from datasets import load_dataset
-from pytest_mock import MockFixture
 from transfer_classifier.augmentor.autoencoder_augmentor import AutoEncoderAugmentor
 from transfer_classifier.dataset_preprocessor.amazon_review import AmazonReview
-from transformers import (
-    AutoModelForMaskedLM,
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-)
+from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 
 class TestAutoEncoderAugmentor:
@@ -18,9 +9,7 @@ class TestAutoEncoderAugmentor:
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
         model = AutoModelForMaskedLM.from_pretrained(model_name, num_labels=2)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        augmentor = AutoEncoderAugmentor(
-            model=model, tokenizer=tokenizer, replace_rate=0.2
-        )
+        augmentor = AutoEncoderAugmentor(model=model, tokenizer=tokenizer, replace_rate=0.2)
 
         text = "今日もいい天気で、花がきれいに咲いています"
         num_replaced, replaced = augmentor.replace_words(text, lang="ja")
@@ -31,9 +20,7 @@ class TestAutoEncoderAugmentor:
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
         model = AutoModelForMaskedLM.from_pretrained(model_name, num_labels=2)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        augmentor = AutoEncoderAugmentor(
-            model=model, tokenizer=tokenizer, replace_rate=0.3
-        )
+        augmentor = AutoEncoderAugmentor(model=model, tokenizer=tokenizer, replace_rate=0.3)
 
         review = AmazonReview(input_column="review_title", label_column="stars")
         samples = review.load("validation").select(range(10))
@@ -51,3 +38,4 @@ class TestAutoEncoderAugmentor:
 
         df = pd.DataFrame(result)
         # df.to_csv("autoencoder.csv", index=False)
+        assert df
