@@ -105,6 +105,7 @@ def main(
                         "stars": sample[review.label_column],
                     }
                 )
+            print(augmenteds)
             samples = concatenate_datasets([samples, augmenteds])
 
         samples = review.format(samples)

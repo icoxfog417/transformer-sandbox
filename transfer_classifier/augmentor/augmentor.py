@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -31,10 +31,16 @@ class Augmentor:
         for _ in range(num_trial):
             augmented = self.generate(dataset.shuffle(), preprocessor)
             if discriminator is not None and preprocessor is not None:
-                matched = self.discriminate(discriminator, preprocessor, dataset, augmented, threshold)
+                matched, log = self.discriminate(
+                    discriminator, preprocessor, dataset, augmented, threshold
+                )
 
-                def unmatched_to_invalid(example: Dict[str, Any], index: int) -> Dict[str, Any]:
-                    example[self.__AUGMENTATION_VALID__] = True if index in matched else False
+                def unmatched_to_invalid(
+                    example: Dict[str, Any], index: int
+                ) -> Dict[str, Any]:
+                    example[self.__AUGMENTATION_VALID__] = (
+                        True if index in matched else False
+                    )
                     return example
 
                 augmented = dataset.map(unmatched_to_invalid, with_indices=True)
@@ -53,12 +59,16 @@ class Augmentor:
                 break
 
         if augmented_samples is not None:
-            augmented_samples = augmented_samples.remove_columns([self.__AUGMENTATION_VALID__])
+            augmented_samples = augmented_samples.remove_columns(
+                [self.__AUGMENTATION_VALID__]
+            )
             augmented_samples = augmented_samples.flatten_indices()
 
         return augmented_samples
 
-    def generate(self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor) -> BatchEncoding:
+    def generate(
+        self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor
+    ) -> BatchEncoding:
         raise NotImplementedError("Augmentor subclass should implement augment_sample.")
 
     def discriminate(
@@ -68,7 +78,7 @@ class Augmentor:
         original: Dataset,
         augmented: Dataset,
         threshold: float,
-    ) -> List[int]:
+    ) -> Tuple[List[int], List[Dict[str, Union[str, float]]]]:
 
         formatted_original = preprocessor.format(original)
         original_scores = self.predict(model, preprocessor, formatted_original)
@@ -77,11 +87,28 @@ class Augmentor:
         augmented_scores = self.predict(model, preprocessor, formatted_augmented)
 
         matched = []
-        for i, original, augmented in zip(range(len(original)), original_scores, augmented_scores):
-            if original["label"] == augmented["label"] and augmented["score"] >= threshold:
+        logs = []
+        for i, original, original_score, augmented, augmented_score in zip(
+            range(len(original)), original, original_scores, augmented, augmented_scores
+        ):
+            if (
+                original_score["label"] == augmented_score["label"]
+                and augmented_score["score"] >= threshold
+            ):
                 matched.append(i)
 
-        return matched
+            logs.append(
+                {
+                    "original": original[preprocessor.input_column],
+                    "original_label": original_score["label"],
+                    "original_score": original_score["score"],
+                    "augmented": augmented[preprocessor.input_column],
+                    "augmented_label": augmented_score["label"],
+                    "augmented_score": augmented_score["score"],
+                }
+            )
+
+        return (matched, logs)
 
     def predict(
         self,
@@ -104,4 +131,7 @@ class Augmentor:
             predictions = outputs[0].cpu().numpy()
 
         scores = np.exp(predictions) / np.exp(predictions).sum(-1, keepdims=True)
-        return [{"label": model.config.id2label[item.argmax()], "score": item.max().item()} for item in scores]
+        return [
+            {"label": model.config.id2label[item.argmax()], "score": item.max().item()}
+            for item in scores
+        ]
