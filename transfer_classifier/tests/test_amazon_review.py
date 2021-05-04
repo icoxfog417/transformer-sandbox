@@ -4,9 +4,7 @@ from transformers import AutoTokenizer
 
 class TestAmazonReview:
     def test_load(self) -> None:
-        review = AmazonReview(
-            input_column="review_title", label_column="stars", lang="ja"
-        )
+        review = AmazonReview(input_column="review_title", label_column="stars", lang="ja")
         assert len(review.load("validation")) > 0
 
     def test_tokenize(self) -> None:
@@ -30,9 +28,7 @@ class TestAmazonReview:
         assert len(dataset) == len(tokenized["attention_mask"])
 
     def test_labels(self) -> None:
-        review = AmazonReview(
-            input_column="review_title", label_column="stars", lang="ja"
-        )
+        review = AmazonReview(input_column="review_title", label_column="stars", lang="ja")
         dataset = review.load("validation", filter_medium_star=False)
         labeled = review.format_labels(dataset)
         assert "labels" in labeled.features
@@ -40,21 +36,15 @@ class TestAmazonReview:
 
         # star 1 = 0
         assert len(labeled.filter(lambda s: s["stars"] == 1)) > 0
-        assert len(labeled.filter(lambda s: s["stars"] == 1)) == len(
-            labeled.filter(lambda s: s["labels"] == 0)
-        )
+        assert len(labeled.filter(lambda s: s["stars"] == 1)) == len(labeled.filter(lambda s: s["labels"] == 0))
 
         # star 5 = 1
         assert len(labeled.filter(lambda s: s["stars"] == 5)) > 0
-        assert len(labeled.filter(lambda s: s["stars"] == 5)) == len(
-            labeled.filter(lambda s: s["labels"] == 1)
-        )
+        assert len(labeled.filter(lambda s: s["stars"] == 5)) == len(labeled.filter(lambda s: s["labels"] == 1))
 
         # star 5 = 1
         assert len(labeled.filter(lambda s: 1 < s["stars"] < 5)) > 0
-        assert len(labeled.filter(lambda s: 1 < s["stars"] < 5)) == len(
-            labeled.filter(lambda s: s["labels"] == -1)
-        )
+        assert len(labeled.filter(lambda s: 1 < s["stars"] < 5)) == len(labeled.filter(lambda s: s["labels"] == -1))
 
     def test_format(self) -> None:
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"

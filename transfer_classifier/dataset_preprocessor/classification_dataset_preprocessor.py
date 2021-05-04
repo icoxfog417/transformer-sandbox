@@ -1,9 +1,6 @@
-from typing import Any, Dict, List
-from typing import Callable
-from typing import Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
-from datasets import load_dataset
 from datasets.arrow_dataset import Dataset
 from transformers.tokenization_utils import BatchEncoding, PreTrainedTokenizer
 
@@ -54,12 +51,16 @@ class ClassificationDatasetPreprocessor:
         if self.label_function is not None:
             _label_function: Callable[[Any], int] = self.label_function
         else:
-            _label_function = lambda example: int(example[self.label_column])
 
-        def encode(examples: Dict[str, List[Any]]) -> Dict[str, np.ndarray]:
+            def label_return(example: Dict[str, Any]) -> int:
+                return int(example[self.label_column])
+
+            _label_function = label_return
+
+        def encode(example: Dict[str, List[Any]]) -> Dict[str, np.ndarray]:
             labels = {
                 "labels": np.array(
-                    [_label_function(s) for s in examples[self.label_column]]
+                    [_label_function(s) for s in example[self.label_column]]
                 )
             }
             return labels
