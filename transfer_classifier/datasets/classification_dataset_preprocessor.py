@@ -1,5 +1,6 @@
 from typing import Any, Dict, List
 from typing import Callable
+from typing import Optional
 
 import numpy as np
 from datasets import load_dataset
@@ -13,13 +14,13 @@ class ClassificationDatasetPreprocessor:
         input_column: str,
         label_column: str,
         tokenizer: PreTrainedTokenizer,
-        truncation=True,
-        max_length=512,
-        padding="max_length",
-        label_function: Callable[[Any], int] = None,
+        truncation: bool = True,
+        max_length: int = 512,
+        padding: str = "max_length",
+        label_function: Optional[Callable[[Any], int]] = None,
         batched: bool = True,
         lang: str = "ja",
-    ):
+    ) -> None:
         self.input_column = input_column
         self.label_column = label_column
         self.tokenizer = tokenizer
@@ -53,7 +54,7 @@ class ClassificationDatasetPreprocessor:
         if self.label_function is not None:
             _label_function: Callable[[Any], int] = self.label_function
         else:
-            _label_function = lambda example: example
+            _label_function = lambda example: int(example[self.label_column])
 
         def encode(examples: Dict[str, List[Any]]) -> Dict[str, np.ndarray]:
             labels = {

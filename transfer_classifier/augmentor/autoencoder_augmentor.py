@@ -11,14 +11,14 @@ from datasets.arrow_dataset import Dataset
 from transformers import PreTrainedModel
 from transformers.tokenization_utils import PreTrainedTokenizer
 from transformers.tokenization_utils import BatchEncoding
-from transfer_classifier.augmentor import Augmentor
-from transfer_classifier.classification_dataset_preprocessor import (
+from transfer_classifier.augmentor.augmentor import Augmentor
+from transfer_classifier.datasets.classification_dataset_preprocessor import (
     ClassificationDatasetPreprocessor,
 )
 
 
 class AutoEncoderAugmentor(Augmentor):
-    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer):
+    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer) -> None:
         super().__init__()
         self.model = model
         self.tokenizer = tokenizer

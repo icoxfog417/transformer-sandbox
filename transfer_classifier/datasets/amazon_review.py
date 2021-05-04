@@ -4,7 +4,7 @@ import numpy as np
 from datasets import load_dataset
 from datasets.arrow_dataset import Dataset
 from transformers.tokenization_utils import BatchEncoding, PreTrainedTokenizer
-from transfer_classifier.classification_dataset_preprocessor import (
+from transfer_classifier.datasets.classification_dataset_preprocessor import (
     ClassificationDatasetPreprocessor,
 )
 
@@ -14,10 +14,10 @@ class AmazonReview(ClassificationDatasetPreprocessor):
         self,
         input_column: str,
         label_column: str,
-        tokenizer: PreTrainedTokenizer,
-        truncation=True,
-        max_length=512,
-        padding="max_length",
+        tokenizer: PreTrainedTokenizer = None,
+        truncation: bool = True,
+        max_length: int = 512,
+        padding: str = "max_length",
         batched: bool = True,
         lang: str = "ja",
     ):
