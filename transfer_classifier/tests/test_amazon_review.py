@@ -1,19 +1,26 @@
+from transfer_classifier.dataset_preprocessor.amazon_review import AmazonReview
 from transformers import AutoTokenizer
-from transfer_classifier.amazon_review import AmazonReview
 
 
 class TestAmazonReview:
     def test_load(self) -> None:
-        review = AmazonReview(lang="ja")
+        review = AmazonReview(
+            input_column="review_title", label_column="stars", lang="ja"
+        )
         assert len(review.load("validation")) > 0
 
     def test_tokenize(self) -> None:
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-        review = AmazonReview(lang="ja")
+        review = AmazonReview(
+            input_column="review_title",
+            label_column="stars",
+            tokenizer=tokenizer,
+            lang="ja",
+        )
         dataset = review.load("validation")
-        tokenized = review.tokenize(dataset, tokenizer)
+        tokenized = review.tokenize(dataset)
         assert "input_ids" in tokenized.features
         assert "token_type_ids" in tokenized.features
         assert "attention_mask" in tokenized.features
@@ -23,9 +30,11 @@ class TestAmazonReview:
         assert len(dataset) == len(tokenized["attention_mask"])
 
     def test_labels(self) -> None:
-        review = AmazonReview(lang="ja")
-        dataset = review.load("validation")
-        labeled = review.labels(dataset)
+        review = AmazonReview(
+            input_column="review_title", label_column="stars", lang="ja"
+        )
+        dataset = review.load("validation", filter_medium_star=False)
+        labeled = review.format_labels(dataset)
         assert "labels" in labeled.features
         assert len(dataset) == len(labeled["labels"])
 
@@ -50,9 +59,14 @@ class TestAmazonReview:
     def test_format(self) -> None:
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        review = AmazonReview(lang="ja")
+        review = AmazonReview(
+            input_column="review_title",
+            label_column="stars",
+            tokenizer=tokenizer,
+            lang="ja",
+        )
         dataset = review.load("validation")
-        formatted = review.format(dataset, tokenizer)
+        formatted = review.format(dataset)
         example = formatted[0]
         assert len(example) == 4
         assert "labels" in example

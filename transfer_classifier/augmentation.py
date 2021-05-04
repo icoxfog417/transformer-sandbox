@@ -1,52 +1,36 @@
+import copy
 from typing import Dict
-from typing import Tuple
-from typing import Any
+
 import numpy as np
-from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
-from transformers import TrainingArguments, Trainer
-from transformers import EvalPrediction
-from transformers import AutoModelForSequenceClassification
-from transformers import AutoModelForMaskedLM
-from transformers import AutoTokenizer
-from transformers import EarlyStoppingCallback
-from datasets import concatenate_datasets, load_from_disk
 from amazon_review import AmazonReview
-from augmentor import Augmentor
+from autoencoder_augmentor import AutoEncoderAugmentor
+from datasets import concatenate_datasets
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from transformers import (
+    AutoModelForMaskedLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    EarlyStoppingCallback,
+    EvalPrediction,
+    Trainer,
+    TrainingArguments,
+)
 
 # Read data
-# About slice https://huggingface.co/docs/datasets/splits.html
-review = AmazonReview(lang="ja")
+review = AmazonReview(
+    input_column="review_title", label_column="stars", tokenizer=None, lang="ja"
+)
 
-# Define pretrained tokenizer and model
+# Define evaluation setting
+dataset = review.load("train")
+validation_dataset = review.load("validation")
+
+num_run = 2
+num_samples = 128
 model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
-model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
-model_augment = AutoModelForMaskedLM.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+validation_samples = None
 
-dataset = review.load("validation")
 
-dataset = dataset.train_test_split(test_size=0.1)
-dataset_train = dataset["train"]
-dataset_validation = review.format(dataset["test"], tokenizer)
-
-# create partial dataset
-dataset_partial = dataset_train.train_test_split(test_size=0.25)["test"]
-
-# Data augmentation
-augmentor = Augmentor(lang="ja", model=model_augment, tokenizer=tokenizer)
-augmenteds = []
-
-for i in range(4):
-    augmented = augmentor.augment(dataset_partial, "review_title").flatten_indices()
-    augmenteds.append(augmented)
-
-augmented = concatenate_datasets([dataset_partial.flatten_indices()] + augmenteds)
-augmented = review.format(augmented, tokenizer)
-
-print(review.statistics(augmented))
-print(review.statistics(dataset_validation))
-
-# Define Trainer parameters
 def compute_metrics(eval: EvalPrediction) -> Dict[str, float]:
     pred, labels = eval
     pred = np.argmax(pred, axis=1)
@@ -59,28 +43,60 @@ def compute_metrics(eval: EvalPrediction) -> Dict[str, float]:
     return {"accuracy": accuracy, "precision": precision, "recall": recall, "f1": f1}
 
 
-# Define Trainer
-args = TrainingArguments(
-    output_dir="output",
-    per_device_train_batch_size=8,
-    per_device_eval_batch_size=8,
-    num_train_epochs=3,
-    evaluation_strategy="steps",
-    eval_steps=100,
-    save_strategy="epoch",
-    seed=0,
-    load_best_model_at_end=True,
-)
+def create_augmentor() -> AutoEncoderAugmentor:
+    model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
+    model = AutoModelForMaskedLM.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    augmentor = AutoEncoderAugmentor(model=model, tokenizer=tokenizer)
+    return augmentor
 
 
-trainer = Trainer(
-    model=model,
-    args=args,
-    train_dataset=augmented,
-    eval_dataset=dataset_validation,
-    compute_metrics=compute_metrics,
-    callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
-)
+discriminator = None
 
-# Train pre-trained model
-trainer.train()
+for i in range(num_run):
+    # Define pretrained tokenizer and model
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if validation_samples is None:
+        review.tokenizer = tokenizer
+        validation_samples = review.format(validation_dataset).select(range(256))
+        review.tokenizer = tokenizer
+
+    samples = dataset.shuffle().select(range(num_samples))
+
+    if i == 0:
+        print(f"Number of samples is {len(samples)}")
+    else:
+        augmentor = create_augmentor()
+        augmented = augmentor.augment(samples, review, discriminator=discriminator)
+        print(f"Number of samples is {len(samples)} and augmented is {len(augmented)}.")
+        samples = concatenate_datasets([samples, augmented])
+
+    samples = review.format(samples)
+    training_args = TrainingArguments(
+        output_dir=f"./results/run{i + 1}",  # output directory
+        num_train_epochs=3,  # total number of training epochs
+        save_strategy="no",
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=32,
+        evaluation_strategy="steps",
+        eval_steps=8,
+        seed=0,
+        load_best_model_at_end=True,
+        logging_dir=f"./logs/run{i + 1}",  # directory for storing logs
+    )
+
+    trainer = Trainer(
+        model=model,  # the instantiated 🤗 Transformers model to be trained
+        args=training_args,  # training arguments, defined above
+        compute_metrics=compute_metrics,
+        train_dataset=samples,  # training dataset
+        eval_dataset=validation_samples,  # evaluation dataset
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+    )
+
+    trainer.train()
+
+    if i == 0:
+        discriminator = copy.deepcopy(model)
