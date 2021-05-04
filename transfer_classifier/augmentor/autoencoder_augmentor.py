@@ -18,45 +18,49 @@ from transfer_classifier.dataset_preprocessor.classification_dataset_preprocesso
 
 
 class AutoEncoderAugmentor(Augmentor):
-    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer) -> None:
+    def __init__(
+        self,
+        model: PreTrainedModel,
+        tokenizer: PreTrainedTokenizer,
+        replace_rate: Union[int, float] = 0.15,
+    ) -> None:
         super().__init__()
         self.model = model
         self.tokenizer = tokenizer
+        self.replace_rate = replace_rate
         self.tagger = GenericTagger()  # Only Japanese support now
 
     def generate(
         self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor
     ) -> BatchEncoding:
-        num_replace = 1
-
         def replace_words(example: Dict[str, Any]) -> Dict[str, Any]:
-            _num_replace, text = self.replace_words(
-                preprocessor.input_column, num_replace, preprocessor.lang
+            _num_replaced, text = self.replace_words(
+                example[preprocessor.input_column], preprocessor.lang
             )
-            example[self.__AUGMENTATION_VALID__] = True if _num_replace > 0 else False
+            example[self.__AUGMENTATION_VALID__] = True if _num_replaced > 0 else False
             example[preprocessor.input_column] = text
             return example
 
         replaced = dataset.map(replace_words)
         return replaced
 
-    def replace_words(self, text: str, num_replace: int, lang: str) -> Tuple[int, str]:
+    def replace_words(self, text: str, lang: str) -> Tuple[int, str]:
         _text = text
-        replaced = []
 
-        for i in range(num_replace):
-            words = []
-            replace_indexes = []
-            for i, w in enumerate(self.tagger(_text)):
-                words.append(w.surface)
-                if w.feature[0] in ("名詞", "動詞", "形容詞", "副詞") and i not in replaced:
-                    replace_indexes.append(i)
+        tokens = list(self.tagger(_text))
+        indexes = []
+        if isinstance(self.replace_rate, int):
+            indexes = random.sample(range(len(tokens)), 1)
+        else:
+            indexes = random.sample(
+                range(len(tokens)), ceil(len(tokens) * self.replace_rate)
+            )
 
-            if len(replace_indexes) == 0:
-                break
-
-            index = random.choice(replace_indexes)
-            words[index] = self.tokenizer.mask_token
+        for i in indexes:
+            words = [
+                token.surface if j != i else self.tokenizer.mask_token
+                for j, token in enumerate(tokens)
+            ]
 
             if lang == "ja":
                 _text = "".join(words)
@@ -80,7 +84,4 @@ class AutoEncoderAugmentor(Augmentor):
                 if text != _text:
                     break
 
-            if text != _text:
-                replaced.append(index)
-
-        return (len(replaced), _text)
+        return (len(indexes), _text)
