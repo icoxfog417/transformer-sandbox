@@ -4,8 +4,12 @@ import torch
 from datasets import load_dataset
 from pytest_mock import MockFixture
 from transfer_classifier.augmentor.autoencoder_augmentor import AutoEncoderAugmentor
-from transfer_classifier.datasets.amazon_review import AmazonReview
-from transformers import AutoModelForMaskedLM, AutoModelForSequenceClassification, AutoTokenizer
+from transfer_classifier.dataset_preprocessor.amazon_review import AmazonReview
+from transformers import (
+    AutoModelForMaskedLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+)
 
 
 class TestAugmentor:
@@ -44,7 +48,9 @@ class TestAugmentor:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         review.tokenizer = tokenizer
 
-        discriminator = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+        discriminator = AutoModelForSequenceClassification.from_pretrained(
+            model_name, num_labels=2
+        )
 
         # original: positive, negative, positive, negative, positive
         # augmented: positive, negative, negative, negative, positive

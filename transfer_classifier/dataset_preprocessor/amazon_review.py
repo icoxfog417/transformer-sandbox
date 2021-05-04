@@ -4,7 +4,7 @@ import numpy as np
 from datasets import load_dataset
 from datasets.arrow_dataset import Dataset
 from transformers.tokenization_utils import BatchEncoding, PreTrainedTokenizer
-from transfer_classifier.datasets.classification_dataset_preprocessor import (
+from transfer_classifier.dataset_preprocessor.classification_dataset_preprocessor import (
     ClassificationDatasetPreprocessor,
 )
 

@@ -1,10 +1,12 @@
-from transfer_classifier.datasets.amazon_review import AmazonReview
+from transfer_classifier.dataset_preprocessor.amazon_review import AmazonReview
 from transformers import AutoTokenizer
 
 
 class TestAmazonReview:
     def test_load(self) -> None:
-        review = AmazonReview(input_column="review_title", label_column="stars", lang="ja")
+        review = AmazonReview(
+            input_column="review_title", label_column="stars", lang="ja"
+        )
         assert len(review.load("validation")) > 0
 
     def test_tokenize(self) -> None:
@@ -28,7 +30,9 @@ class TestAmazonReview:
         assert len(dataset) == len(tokenized["attention_mask"])
 
     def test_labels(self) -> None:
-        review = AmazonReview(input_column="review_title", label_column="stars", lang="ja")
+        review = AmazonReview(
+            input_column="review_title", label_column="stars", lang="ja"
+        )
         dataset = review.load("validation", filter_medium_star=False)
         labeled = review.format_labels(dataset)
         assert "labels" in labeled.features

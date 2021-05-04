@@ -13,7 +13,7 @@ from datasets import concatenate_datasets
 from transformers import PreTrainedModel
 from transformers.tokenization_utils import PreTrainedTokenizer
 from transformers.tokenization_utils import BatchEncoding
-from transfer_classifier.datasets.classification_dataset_preprocessor import (
+from transfer_classifier.dataset_preprocessor.classification_dataset_preprocessor import (
     ClassificationDatasetPreprocessor,
 )
 
