@@ -28,10 +28,13 @@ def main(
     batch_size: int = 10,
     model_name: str = "cl-tohoku/bert-base-japanese-whole-word-masking",
     threshold: float = 0.6,
+    eval_frequency: int = 3,
 ) -> Tuple[PreTrainedModel, pd.DataFrame]:
 
     # Read data
-    review = AmazonReview(input_column=input_column, label_column="stars", tokenizer=None, lang="ja")
+    review = AmazonReview(
+        input_column=input_column, label_column="stars", tokenizer=None, lang="ja"
+    )
 
     # Define evaluation setting
     dataset = review.load("train")
@@ -68,9 +71,12 @@ def main(
     discriminator = None
 
     compares = []
+    eval_steps = (num_samples / batch_size) // eval_frequency
     for i in range(num_run):
         # Define pretrained tokenizer and model
-        model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_name, num_labels=2
+        )
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         if validation_samples is None:
             review.tokenizer = tokenizer
@@ -83,8 +89,12 @@ def main(
             print(f"Number of samples is {len(samples)}")
         else:
             augmentor = create_augmentor(augment_method, model_name)
-            augmenteds = augmentor.augment(samples, review, discriminator=discriminator, threshold=threshold)
-            print(f"Number of samples is {len(samples)} and augmenteds is {len(augmenteds)}.")
+            augmenteds = augmentor.augment(
+                samples, review, discriminator=discriminator, threshold=threshold
+            )
+            print(
+                f"Number of samples is {len(samples)} and augmenteds is {len(augmenteds)}."
+            )
 
             for sample, augmented in zip(samples, augmenteds):
                 compares.append(
@@ -95,7 +105,7 @@ def main(
                         "stars": sample[review.label_column],
                     }
                 )
-            samples = concatenate_datasets([samples, augmented])
+            samples = concatenate_datasets([samples, augmenteds])
 
         samples = review.format(samples)
         training_args = TrainingArguments(
@@ -105,7 +115,7 @@ def main(
             per_device_train_batch_size=batch_size,
             per_device_eval_batch_size=32,
             evaluation_strategy="steps",
-            eval_steps=batch_size * 2,
+            eval_steps=eval_steps,
             seed=0,
             logging_dir=f"./logs/run{i + 1}",  # directory for storing logs
         )
