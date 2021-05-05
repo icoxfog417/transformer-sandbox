@@ -28,7 +28,8 @@ def write_dataset(
     input_column: str = "review_title",
     augment_method: str = "autoencoder",
     save_folder: str = "experiments",
-    iteration: int = 5,
+    range_from: int = 0,
+    range_to: int = 5,
     num_samples: int = 100,
     model_name: str = "cl-tohoku/bert-base-japanese-whole-word-masking",
     replace_rate: float = 0.3,
@@ -69,7 +70,7 @@ def write_dataset(
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     review.tokenizer = tokenizer
 
-    for i in range(iteration):
+    for i in range(range_from, range_to):
         samples = dataset.shuffle().select(range(num_samples))
         augmentor = create_augmentor(augment_method)
         augmenteds = augmentor.augment(samples, review)
@@ -97,7 +98,7 @@ def write_dataset(
         if not path.exists():
             path.mkdir()
         df = pd.DataFrame(augmented_dataset)
-        file_name = f"{augment_method}_{iteration}.csv"
+        file_name = f"{augment_method}_{i}.csv"
         print(
             f"Save {len(samples)} samples and {len(augmenteds)} augmented data to {file_name}."
         )
@@ -110,7 +111,8 @@ def train_experiment(
     input_column: str = "review_title",
     augment_method: str = "autoencoder",
     save_folder: str = "experiments",
-    iteration: int = 5,
+    range_from: int = 0,
+    range_to: int = 5,
     model_name: str = "cl-tohoku/bert-base-japanese-whole-word-masking",
     batch_size: int = 10,
     eval_interval: int = 3,
@@ -139,8 +141,8 @@ def train_experiment(
     validation_dataset = review.load("validation")
     path = Path(f"./{save_folder}")
 
-    for i in range(iteration):
-        file_name = f"{augment_method}_{iteration}.csv"
+    for i in range(range_from, range_to):
+        file_name = f"{augment_method}_{i}.csv"
         dataset = load_dataset("csv", data_files=str(path.joinpath(file_name)))["train"]
         validation_samples = review.format(validation_dataset.shuffle()).select(
             range(len(dataset))
