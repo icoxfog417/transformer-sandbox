@@ -27,7 +27,7 @@ from augmentor.autoregressive_augmentor import AutoRegressiveAugmentor
 def write_dataset(
     input_column: str = "review_title",
     augment_method: str = "autoencoder",
-    save_folder: str = "dataset",
+    save_folder: str = "experiments",
     iteration: int = 5,
     num_samples: int = 100,
     model_name: str = "cl-tohoku/bert-base-japanese-whole-word-masking",
@@ -94,6 +94,8 @@ def write_dataset(
             )
 
         path = Path(f"./{save_folder}")
+        if not path.exists():
+            path.mkdir()
         df = pd.DataFrame(augmented_dataset)
         file_name = f"{augment_method}_{iteration}.csv"
         print(
@@ -161,7 +163,6 @@ def train_dataset(
                 per_device_eval_batch_size=32,
                 evaluation_strategy="steps",
                 eval_steps=batch_size * eval_frequency,
-                seed=0,
                 logging_dir=f"./logs/run{i + 1}",  # directory for storing logs
             )
 
