@@ -99,7 +99,7 @@ def write_dataset(
         print(
             f"Save {len(sample)} samples and {len(augmenteds)} augmented data to {file_name}."
         )
-        df.to_csv(path, file_name, index=False)
+        df.to_csv(path.joinpath(file_name), index=False)
 
         return df
 
