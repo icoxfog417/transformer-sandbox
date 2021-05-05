@@ -5,14 +5,13 @@ from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
-from augmentor.augmentor import Augmentor
-from augmentor.autoencoder_augmentor import AutoEncoderAugmentor
-from dataset_preprocessor.amazon_review import AmazonReview
 from datasets import concatenate_datasets
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from transformers import (
     AutoModelForMaskedLM,
     AutoModelForSequenceClassification,
+    AutoModelForCausalLM,
+    T5Tokenizer,
     AutoTokenizer,
     EarlyStoppingCallback,
     EvalPrediction,
@@ -20,6 +19,10 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
+from dataset_preprocessor.amazon_review import AmazonReview
+from augmentor.augmentor import Augmentor
+from augmentor.autoencoder_augmentor import AutoEncoderAugmentor
+from augmentor.autoregressive_augmentor import AutoRegressiveAugmentor
 
 
 def main(
@@ -61,16 +64,22 @@ def main(
             "f1": f1,
         }
 
-    def create_augmentor(augment_method: str, model_name: str) -> Augmentor:
-        model = AutoModelForMaskedLM.from_pretrained(model_name)
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+    def create_augmentor(augment_method: str) -> Augmentor:
 
-        if augment_method == "autoencoder":
+        if augment_method == "autoregressive":
+            model_name = "rinna/japanese-gpt2-medium"
+            model = AutoModelForCausalLM.from_pretrained(model_name)
+            tokenizer = T5Tokenizer.from_pretrained("rinna/japanese-gpt2-medium")
+            augmentor = AutoRegressiveAugmentor(
+                model=model, tokenizer=tokenizer, num_prompt=3
+            )
+        else:
+            model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
+            model = AutoModelForMaskedLM.from_pretrained(model_name)
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
             augmentor = AutoEncoderAugmentor(
                 model=model, tokenizer=tokenizer, replace_rate=replace_rate
             )
-        else:
-            augmentor = AutoEncoderAugmentor(model=model, tokenizer=tokenizer)
         return augmentor
 
     discriminator = None
@@ -86,14 +95,13 @@ def main(
         if validation_samples is None:
             review.tokenizer = tokenizer
             validation_samples = review.format(validation_dataset).select(range(256))
-            review.tokenizer = tokenizer
 
         samples = dataset.shuffle().select(range(num_samples))
 
         if i == 0:
             print(f"Number of samples is {len(samples)}")
         else:
-            augmentor = create_augmentor(augment_method, model_name)
+            augmentor = create_augmentor(augment_method)
             augmenteds = augmentor.augment(
                 samples, review, discriminator=discriminator, threshold=threshold
             )
@@ -110,7 +118,6 @@ def main(
                         "stars": sample[review.label_column],
                     }
                 )
-            print(augmenteds)
             samples = concatenate_datasets([samples, augmenteds])
 
         samples = review.format(samples)

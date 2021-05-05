@@ -29,10 +29,11 @@ class Augmentor:
             raise Exception("To use discriminator, preprocessor should be required.")
 
         for _ in range(num_trial):
-            augmented = self.generate(dataset.shuffle(), preprocessor)
+            original = dataset.shuffle()
+            augmented = self.generate(original, preprocessor)
             if discriminator is not None and preprocessor is not None:
                 matched, log = self.discriminate(
-                    discriminator, preprocessor, dataset, augmented, threshold
+                    discriminator, preprocessor, original, augmented, threshold
                 )
 
                 def unmatched_to_invalid(
@@ -43,7 +44,7 @@ class Augmentor:
                     )
                     return example
 
-                augmented = dataset.map(unmatched_to_invalid, with_indices=True)
+                augmented = augmented.map(unmatched_to_invalid, with_indices=True)
 
             augmented = augmented.filter(lambda e: e[self.__AUGMENTATION_VALID__])
             if len(augmented) == 0:
@@ -81,10 +82,10 @@ class Augmentor:
     ) -> Tuple[List[int], List[Dict[str, Union[str, float]]]]:
 
         formatted_original = preprocessor.format(original)
-        original_scores = self.predict(model, preprocessor, formatted_original)
+        original_scores = self.predict(model, formatted_original)
 
         formatted_augmented = preprocessor.format(augmented)
-        augmented_scores = self.predict(model, preprocessor, formatted_augmented)
+        augmented_scores = self.predict(model, formatted_augmented)
 
         matched = []
         logs = []
@@ -113,7 +114,6 @@ class Augmentor:
     def predict(
         self,
         model: PreTrainedModel,
-        preprocessor: ClassificationDatasetPreprocessor,
         examples: Dataset,
     ) -> List[Dict[str, Union[int, float]]]:
         model.eval()
