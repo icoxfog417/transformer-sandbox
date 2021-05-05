@@ -109,7 +109,7 @@ def write_dataset(
 def train_experiment(
     input_column: str = "review_title",
     augment_method: str = "autoencoder",
-    save_folder: str = "dataset",
+    save_folder: str = "experiments",
     iteration: int = 5,
     model_name: str = "cl-tohoku/bert-base-japanese-whole-word-masking",
     batch_size: int = 10,
@@ -141,7 +141,7 @@ def train_experiment(
 
     for i in range(iteration):
         file_name = f"{augment_method}_{iteration}.csv"
-        dataset = load_dataset("csv", data_files=[path.joinpath(file_name)])
+        dataset = load_dataset("csv", data_files=[str(path.joinpath(file_name)]))
         validation_samples = review.format(validation_dataset.shuffle()).select(
             range(len(dataset))
         )
