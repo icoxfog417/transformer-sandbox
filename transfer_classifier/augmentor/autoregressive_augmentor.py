@@ -66,7 +66,7 @@ class AutoRegressiveAugmentor(Augmentor):
                 max_length=preprocessor.max_length,
             )
 
-            text = self.tokenizer.decode(generated[0], skip_special_tokens=True)
+            _text = self.tokenizer.decode(generated[0], skip_special_tokens=True)
             _text = _text[
                 : int(truncateds[index]["original_length"] * self.max_length_factor)
             ]
