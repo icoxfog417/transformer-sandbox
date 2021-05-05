@@ -141,7 +141,7 @@ def train_experiment(
 
     for i in range(iteration):
         file_name = f"{augment_method}_{iteration}.csv"
-        dataset = load_dataset("csv", data_files=[str(path.joinpath(file_name))])
+        dataset = load_dataset("csv", data_files=str(path.joinpath(file_name)))["train"]
         validation_samples = review.format(validation_dataset.shuffle()).select(
             range(len(dataset))
         )
@@ -176,6 +176,6 @@ def train_experiment(
                 callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
             )
 
-        trainer.train()
+            trainer.train()
 
     return trainer.model
