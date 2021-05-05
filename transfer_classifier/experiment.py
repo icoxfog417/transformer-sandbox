@@ -144,7 +144,6 @@ def train_experiment(
     validation_dataset = review.load("validation")
     path = Path(f"./{save_folder}")
 
-    without_augmentation = False
     for i in range(range_from, range_to):
         file_name = f"{augment_method}_{i}.csv"
         dataset = load_dataset("csv", data_files=str(path.joinpath(file_name)))["train"]
@@ -152,16 +151,11 @@ def train_experiment(
             range(len(dataset))
         )
 
+        print(f"Iteration {i}")
         for kind in ("original", "augmented"):
             if kind == "original":
-                if not without_augmentation:
-                    print("Show without augmentation")
-                    samples = dataset.filter(lambda e: e["kind"] == kind)
-                    without_augmentation = True
-                else:
-                    continue
+                samples = dataset.filter(lambda e: e["kind"] == kind)
             else:
-                print(f"Iteration {i}")
                 samples = dataset  # include all dataset
 
             samples = review.format(samples)
@@ -176,7 +170,7 @@ def train_experiment(
                 per_device_eval_batch_size=32,
                 evaluation_strategy="steps",
                 eval_steps=len(samples) // batch_size // eval_interval,
-                logging_dir=f"./logs/run{i + 1}",  # directory for storing logs
+                logging_dir=f"./logs/{kind}_{i + 1}",  # directory for storing logs
             )
 
             trainer = Trainer(
