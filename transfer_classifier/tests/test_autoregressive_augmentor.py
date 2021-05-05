@@ -1,9 +1,7 @@
 import pandas as pd
-from transformers import AutoModelForCausalLM, T5Tokenizer
-from transfer_classifier.augmentor.autoregressive_augmentor import (
-    AutoRegressiveAugmentor,
-)
+from transfer_classifier.augmentor.autoregressive_augmentor import AutoRegressiveAugmentor
 from transfer_classifier.dataset_preprocessor.amazon_review import AmazonReview
+from transformers import AutoModelForCausalLM, T5Tokenizer
 
 
 class TestAutoRegressiveAugmentor:
@@ -11,9 +9,7 @@ class TestAutoRegressiveAugmentor:
         model_name = "rinna/japanese-gpt2-medium"
         model = AutoModelForCausalLM.from_pretrained(model_name)
         tokenizer = T5Tokenizer.from_pretrained("rinna/japanese-gpt2-medium")
-        augmentor = AutoRegressiveAugmentor(
-            model=model, tokenizer=tokenizer, num_prompt=3
-        )
+        augmentor = AutoRegressiveAugmentor(model=model, tokenizer=tokenizer, num_prompt=3)
 
         review = AmazonReview(input_column="review_title", label_column="stars")
         samples = review.load("validation").select(range(3))

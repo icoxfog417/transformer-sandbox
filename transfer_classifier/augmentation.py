@@ -1,28 +1,28 @@
 import copy
-from pathlib import Path
 import shutil
+from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
+from augmentor.augmentor import Augmentor
+from augmentor.autoencoder_augmentor import AutoEncoderAugmentor
+from augmentor.autoregressive_augmentor import AutoRegressiveAugmentor
+from dataset_preprocessor.amazon_review import AmazonReview
 from datasets import concatenate_datasets
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from transformers import (
+    AutoModelForCausalLM,
     AutoModelForMaskedLM,
     AutoModelForSequenceClassification,
-    AutoModelForCausalLM,
-    T5Tokenizer,
     AutoTokenizer,
     EarlyStoppingCallback,
     EvalPrediction,
     PreTrainedModel,
+    T5Tokenizer,
     Trainer,
     TrainingArguments,
 )
-from dataset_preprocessor.amazon_review import AmazonReview
-from augmentor.augmentor import Augmentor
-from augmentor.autoencoder_augmentor import AutoEncoderAugmentor
-from augmentor.autoregressive_augmentor import AutoRegressiveAugmentor
 
 
 def main(
@@ -38,9 +38,7 @@ def main(
 ) -> Tuple[PreTrainedModel, pd.DataFrame]:
 
     # Read data
-    review = AmazonReview(
-        input_column=input_column, label_column="stars", tokenizer=None, lang="ja"
-    )
+    review = AmazonReview(input_column=input_column, label_column="stars", tokenizer=None, lang="ja")
 
     # Define evaluation setting
     dataset = review.load("train")
@@ -70,16 +68,12 @@ def main(
             model_name = "rinna/japanese-gpt2-medium"
             model = AutoModelForCausalLM.from_pretrained(model_name)
             tokenizer = T5Tokenizer.from_pretrained("rinna/japanese-gpt2-medium")
-            augmentor = AutoRegressiveAugmentor(
-                model=model, tokenizer=tokenizer, num_prompt=3
-            )
+            augmentor = AutoRegressiveAugmentor(model=model, tokenizer=tokenizer, num_prompt=3)
         else:
             model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
             model = AutoModelForMaskedLM.from_pretrained(model_name)
             tokenizer = AutoTokenizer.from_pretrained(model_name)
-            augmentor = AutoEncoderAugmentor(
-                model=model, tokenizer=tokenizer, replace_rate=replace_rate
-            )
+            augmentor = AutoEncoderAugmentor(model=model, tokenizer=tokenizer, replace_rate=replace_rate)
         return augmentor
 
     discriminator = None
@@ -88,9 +82,7 @@ def main(
     eval_steps = (num_samples / batch_size) // eval_frequency
     for i in range(num_run):
         # Define pretrained tokenizer and model
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, num_labels=2
-        )
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         if validation_samples is None:
             review.tokenizer = tokenizer
@@ -102,12 +94,8 @@ def main(
             print(f"Number of samples is {len(samples)}")
         else:
             augmentor = create_augmentor(augment_method)
-            augmenteds = augmentor.augment(
-                samples, review, discriminator=discriminator, threshold=threshold
-            )
-            print(
-                f"Number of samples is {len(samples)} and augmenteds is {len(augmenteds)}."
-            )
+            augmenteds = augmentor.augment(samples, review, discriminator=discriminator, threshold=threshold)
+            print(f"Number of samples is {len(samples)} and augmenteds is {len(augmenteds)}.")
 
             for sample, augmented in zip(samples, augmenteds):
                 compares.append(

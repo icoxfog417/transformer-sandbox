@@ -1,8 +1,5 @@
-import random
-from math import ceil
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict
 
-import torch
 from datasets.arrow_dataset import Dataset
 from fugashi import GenericTagger
 from transfer_classifier.augmentor.augmentor import Augmentor
@@ -28,14 +25,9 @@ class AutoRegressiveAugmentor(Augmentor):
         self.max_length_factor = max_length_factor
         self.tagger = GenericTagger()  # Only Japanese support now
 
-    def generate(
-        self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor
-    ) -> BatchEncoding:
+    def generate(self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor) -> BatchEncoding:
         def truncate_words(example: Dict[str, Any]) -> Dict[str, Any]:
-            words = [
-                token.surface
-                for token in self.tagger(example[preprocessor.input_column])
-            ]
+            words = [token.surface for token in self.tagger(example[preprocessor.input_column])]
             prompt = words[: self.num_prompt]
             if preprocessor.lang == "ja":
                 _text = "".join(prompt)
@@ -48,9 +40,7 @@ class AutoRegressiveAugmentor(Augmentor):
 
         truncateds = dataset.map(truncate_words)
 
-        def attach_generated_words(
-            example: Dict[str, Any], index: int
-        ) -> Dict[str, Any]:
+        def attach_generated_words(example: Dict[str, Any], index: int) -> Dict[str, Any]:
 
             formatted_truncated = self.tokenizer.encode(
                 truncateds[index][preprocessor.input_column],
@@ -67,9 +57,7 @@ class AutoRegressiveAugmentor(Augmentor):
             )
 
             _text = self.tokenizer.decode(generated[0], skip_special_tokens=True)
-            _text = _text[
-                : int(truncateds[index]["original_length"] * self.max_length_factor)
-            ]
+            _text = _text[: int(truncateds[index]["original_length"] * self.max_length_factor)]
 
             example[preprocessor.input_column] = _text
             return example

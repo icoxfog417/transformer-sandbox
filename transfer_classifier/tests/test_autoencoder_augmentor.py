@@ -9,9 +9,7 @@ class TestAutoEncoderAugmentor:
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
         model = AutoModelForMaskedLM.from_pretrained(model_name, num_labels=2)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        augmentor = AutoEncoderAugmentor(
-            model=model, tokenizer=tokenizer, replace_rate=0.2
-        )
+        augmentor = AutoEncoderAugmentor(model=model, tokenizer=tokenizer, replace_rate=0.2)
 
         text = "今日もいい天気で、花がきれいに咲いています"
         num_replaced, replaced = augmentor.replace_words(text, lang="ja")
@@ -22,9 +20,7 @@ class TestAutoEncoderAugmentor:
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
         model = AutoModelForMaskedLM.from_pretrained(model_name, num_labels=2)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        augmentor = AutoEncoderAugmentor(
-            model=model, tokenizer=tokenizer, replace_rate=0.3
-        )
+        augmentor = AutoEncoderAugmentor(model=model, tokenizer=tokenizer, replace_rate=0.3)
 
         review = AmazonReview(input_column="review_title", label_column="stars")
         samples = review.load("validation").select(range(10))
