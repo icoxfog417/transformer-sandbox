@@ -65,6 +65,7 @@ class ClassificationDatasetPreprocessor:
         return dataset.map(encode, batched=self.batched)
 
     def format(self, dataset: Dataset) -> Dataset:
+        tokenized = self.tokenize(dataset)
         label_formatted = self.format_labels(tokenized)
         columns = ["input_ids", "attention_mask", "labels"]
         if "token_type_ids" in label_formatted.column_names:
