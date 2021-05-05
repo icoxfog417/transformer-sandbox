@@ -78,7 +78,7 @@ def write_dataset(
         for sample in samples:
             augmented_dataset.append(
                 {
-                    "input_text": sample[review.input_column],
+                    review.input_column: sample[review.input_column],
                     "stars": sample[review.label_column],
                     "kind": "original",
                 }
@@ -87,7 +87,7 @@ def write_dataset(
         for augmented in augmenteds:
             augmented_dataset.append(
                 {
-                    "input_text": augmented[review.input_column],
+                    review.input_column: augmented[review.input_column],
                     "stars": augmented[review.label_column],
                     "kind": "augmented",
                 }
