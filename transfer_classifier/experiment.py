@@ -143,6 +143,7 @@ def train_experiment(
     validation_dataset = review.load("validation")
     path = Path(f"./{save_folder}")
 
+    without_augmentation = False
     for i in range(range_from, range_to):
         file_name = f"{augment_method}_{i}.csv"
         dataset = load_dataset("csv", data_files=str(path.joinpath(file_name)))["train"]
@@ -152,7 +153,11 @@ def train_experiment(
 
         for kind in ("original", "augmented"):
             if kind == "original":
-                samples = dataset.filter(lambda e: e["kind"] == kind)
+                if without_augmentation:
+                    samples = dataset.filter(lambda e: e["kind"] == kind)
+                    without_augmentation = True
+                else:
+                    continue
             else:
                 samples = dataset  # include all dataset
 
