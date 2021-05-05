@@ -72,6 +72,7 @@ def write_dataset(
 
     dfs = []
     for i in range(range_from, range_to):
+        print(f"Iteration {i}")
         samples = dataset.shuffle().select(range(num_samples))
         augmentor = create_augmentor(augment_method)
         augmenteds = augmentor.augment(samples, review)
@@ -154,11 +155,13 @@ def train_experiment(
         for kind in ("original", "augmented"):
             if kind == "original":
                 if without_augmentation:
+                    print("Show without augmentation")
                     samples = dataset.filter(lambda e: e["kind"] == kind)
                     without_augmentation = True
                 else:
                     continue
             else:
+                print(f"Iteration {i}")
                 samples = dataset  # include all dataset
 
             samples = review.format(samples)
