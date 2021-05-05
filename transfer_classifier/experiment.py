@@ -113,7 +113,7 @@ def train_experiment(
     iteration: int = 5,
     model_name: str = "cl-tohoku/bert-base-japanese-whole-word-masking",
     batch_size: int = 10,
-    eval_frequency: int = 2,
+    eval_interval: int = 3,
 ) -> PreTrainedModel:
     def compute_metrics(eval: EvalPrediction) -> Dict[str, float]:
         pred, labels = eval
@@ -163,7 +163,7 @@ def train_experiment(
                 per_device_train_batch_size=batch_size,
                 per_device_eval_batch_size=32,
                 evaluation_strategy="steps",
-                eval_steps=batch_size * eval_frequency,
+                eval_steps=len(samples) // batch_size // eval_interval,
                 logging_dir=f"./logs/run{i + 1}",  # directory for storing logs
             )
 
