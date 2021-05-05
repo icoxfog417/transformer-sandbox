@@ -106,7 +106,7 @@ def write_dataset(
         return df
 
 
-def train_dataset(
+def train_experiment(
     input_column: str = "review_title",
     augment_method: str = "autoencoder",
     save_folder: str = "dataset",
