@@ -141,7 +141,7 @@ def train_experiment(
 
     for i in range(iteration):
         file_name = f"{augment_method}_{iteration}.csv"
-        dataset = load_dataset("csv", data_files=[str(path.joinpath(file_name)]))
+        dataset = load_dataset("csv", data_files=[str(path.joinpath(file_name))])
         validation_samples = review.format(validation_dataset.shuffle()).select(
             range(len(dataset))
         )
