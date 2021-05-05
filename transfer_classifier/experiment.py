@@ -1,6 +1,6 @@
 from pathlib import Path
 import shutil
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -35,7 +35,7 @@ def write_dataset(
     replace_rate: float = 0.3,
     num_prompt: int = 3,
     max_length_factor: float = 3,
-) -> pd.DataFrame:
+) -> List[pd.DataFrame]:
 
     # Read data
     review = AmazonReview(
@@ -70,6 +70,7 @@ def write_dataset(
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     review.tokenizer = tokenizer
 
+    dfs = []
     for i in range(range_from, range_to):
         samples = dataset.shuffle().select(range(num_samples))
         augmentor = create_augmentor(augment_method)
@@ -103,8 +104,9 @@ def write_dataset(
             f"Save {len(samples)} samples and {len(augmenteds)} augmented data to {file_name}."
         )
         df.to_csv(path.joinpath(file_name), index=False)
+        dfs.append(df)
 
-        return df
+    return dfs
 
 
 def train_experiment(
