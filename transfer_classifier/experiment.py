@@ -154,7 +154,7 @@ def train_experiment(
 
         for kind in ("original", "augmented"):
             if kind == "original":
-                if without_augmentation:
+                if not without_augmentation:
                     print("Show without augmentation")
                     samples = dataset.filter(lambda e: e["kind"] == kind)
                     without_augmentation = True
