@@ -41,5 +41,5 @@ class TestAutoEncoderAugmentor:
             )
 
         df = pd.DataFrame(result)
-        # df.to_csv("autoencoder.csv", index=False)
+        df.to_csv("autoencoder.csv", index=False)
         assert df is not None

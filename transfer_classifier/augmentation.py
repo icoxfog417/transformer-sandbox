@@ -1,4 +1,6 @@
 import copy
+from pathlib import Path
+import shutil
 from typing import Dict, Tuple
 
 import numpy as np
@@ -28,6 +30,7 @@ def main(
     batch_size: int = 10,
     model_name: str = "cl-tohoku/bert-base-japanese-whole-word-masking",
     threshold: float = 0.6,
+    replace_rate: float = 0.3,
     eval_frequency: int = 3,
 ) -> Tuple[PreTrainedModel, pd.DataFrame]:
 
@@ -63,7 +66,9 @@ def main(
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         if augment_method == "autoencoder":
-            augmentor = AutoEncoderAugmentor(model=model, tokenizer=tokenizer)
+            augmentor = AutoEncoderAugmentor(
+                model=model, tokenizer=tokenizer, replace_rate=replace_rate
+            )
         else:
             augmentor = AutoEncoderAugmentor(model=model, tokenizer=tokenizer)
         return augmentor
@@ -109,6 +114,9 @@ def main(
             samples = concatenate_datasets([samples, augmenteds])
 
         samples = review.format(samples)
+        if Path(f"./results/run{i}").exists():
+            shutil.rmtree(f"./results/run{i}")
+
         training_args = TrainingArguments(
             output_dir=f"./results/run{i + 1}",  # output directory
             num_train_epochs=3,  # total number of training epochs
