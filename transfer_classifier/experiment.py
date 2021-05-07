@@ -32,6 +32,7 @@ def write_dataset(
     range_to: int = 5,
     num_samples: int = 100,
     model_name: str = "cl-tohoku/bert-base-japanese-whole-word-masking",
+    max_length: int = 128,
     replace_rate: float = 0.3,
     num_prompt: int = 3,
     max_length_factor: float = 3,
@@ -39,7 +40,11 @@ def write_dataset(
 
     # Read data
     review = AmazonReview(
-        input_column=input_column, label_column="stars", tokenizer=None, lang="ja"
+        input_column=input_column,
+        label_column="stars",
+        tokenizer=None,
+        max_length=max_length,
+        lang="ja",
     )
 
     # Define evaluation setting

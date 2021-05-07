@@ -16,7 +16,7 @@ class AutoRegressiveAugmentor(Augmentor):
         model: PreTrainedModel,
         tokenizer: PreTrainedTokenizer,
         num_prompt: int = 3,
-        max_length_factor: float = 3.0,
+        max_length_factor: float = 1.5,
     ) -> None:
         super().__init__()
         self.model = model
@@ -60,12 +60,15 @@ class AutoRegressiveAugmentor(Augmentor):
             )
             generated = self.model.generate(
                 formatted_truncated,
+                num_beams=5,
                 no_repeat_ngram_size=2,
+                early_stopping=True,
                 max_length=preprocessor.max_length,
             )
 
             _text = self.tokenizer.decode(generated[0], skip_special_tokens=True)
             example[preprocessor.input_column] = _text
+            example[self.__AUGMENTATION_VALID__] = True
             return example
 
         generateds = dataset.map(attach_generated_words, with_indices=True)
