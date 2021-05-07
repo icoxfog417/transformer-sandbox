@@ -121,6 +121,7 @@ def train_experiment(
     save_folder: str = "experiments",
     range_from: int = 0,
     range_to: int = 5,
+    max_length: int = 128,
     model_name: str = "cl-tohoku/bert-base-japanese-whole-word-masking",
     batch_size: int = 10,
     eval_interval: int = 3,
@@ -144,7 +145,11 @@ def train_experiment(
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     review = AmazonReview(
-        input_column=input_column, label_column="stars", tokenizer=tokenizer, lang="ja"
+        input_column=input_column,
+        label_column="stars",
+        tokenizer=tokenizer,
+        lang="ja",
+        max_length=max_length,
     )
     validation_dataset = review.load("validation")
     path = Path(f"./{save_folder}")
