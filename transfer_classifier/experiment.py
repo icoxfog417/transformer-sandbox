@@ -86,9 +86,7 @@ def write_dataset(
             model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
             model = AutoModelForMaskedLM.from_pretrained(model_name)
             tokenizer = AutoTokenizer.from_pretrained(model_name)
-            augmentor = AutoEncoderAugmentor(
-                model=model, tokenizer=tokenizer, replace_rate=replace_rate
-            )
+            augmentor = AutoEncoderAugmentor(model=model, tokenizer=tokenizer, replace_rate=replace_rate)
         return augmentor
 
     # Define pretrained tokenizer and model
@@ -129,9 +127,7 @@ def write_dataset(
 
         df = pd.DataFrame(augmented_dataset)
         file_name = f"{augment_method}_{i}.csv"
-        print(
-            f"Save {len(samples)} samples and {len(augmenteds)} augmented data to {file_name}."
-        )
+        print(f"Save {len(samples)} samples and {len(augmenteds)} augmented data to {file_name}.")
         df.to_csv(path.joinpath(file_name), index=False)
         dfs.append(df)
 
@@ -187,9 +183,7 @@ def train_experiment(
         if target_file_name:
             file_name = target_file_name
         dataset = load_dataset("csv", data_files=str(path.joinpath(file_name)))["train"]
-        validation_samples = review.format(validation_dataset.shuffle()).select(
-            range(len(dataset))
-        )
+        validation_samples = review.format(validation_dataset.shuffle()).select(range(len(dataset)))
 
         print(f"Iteration {i}")
         for kind in ("original", "augmented"):
