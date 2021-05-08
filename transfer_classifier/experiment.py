@@ -65,8 +65,7 @@ def write_dataset(
             input_column=input_column,
             augment_method=augment_method,
             save_folder=save_folder,
-            range_from=0,
-            range_to=1,
+            target_file_name=file_name,
             max_length=max_length,
             model_name=model_name,
         )
@@ -145,6 +144,7 @@ def train_experiment(
     save_folder: str = "experiments",
     range_from: int = 0,
     range_to: int = 5,
+    target_file_name: str = "",
     max_length: int = 128,
     model_name: str = "cl-tohoku/bert-base-japanese-whole-word-masking",
     batch_size: int = 10,
@@ -178,8 +178,14 @@ def train_experiment(
     validation_dataset = review.load("validation")
     path = Path(f"./{save_folder}")
 
+    if target_file_name:
+        range_from = 0
+        range_to = 1
+
     for i in range(range_from, range_to):
         file_name = f"{augment_method}_{i}.csv"
+        if target_file_name:
+            file_name = target_file_name
         dataset = load_dataset("csv", data_files=str(path.joinpath(file_name)))["train"]
         validation_samples = review.format(validation_dataset.shuffle()).select(
             range(len(dataset))
@@ -187,10 +193,13 @@ def train_experiment(
 
         print(f"Iteration {i}")
         for kind in ("original", "augmented"):
-            if kind == "original":
-                samples = dataset.filter(lambda e: e["kind"] == kind)
+            if target_file_name:
+                samples = dataset
             else:
-                samples = dataset  # include all dataset
+                if kind == "original":
+                    samples = dataset.filter(lambda e: e["kind"] == kind)
+                else:
+                    samples = dataset  # include all dataset
 
             samples = review.format(samples)
             if Path(f"./results/run{i}").exists():
@@ -217,5 +226,8 @@ def train_experiment(
             )
 
             trainer.train()
+
+            if target_file_name:
+                break
 
     return trainer.model
