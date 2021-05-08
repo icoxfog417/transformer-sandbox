@@ -25,9 +25,14 @@ class AutoRegressiveAugmentor(Augmentor):
         self.max_length_factor = max_length_factor
         self.tagger = GenericTagger()  # Only Japanese support now
 
-    def generate(self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor) -> BatchEncoding:
+    def generate(
+        self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor
+    ) -> BatchEncoding:
         def truncate_words(example: Dict[str, Any]) -> Dict[str, Any]:
-            words = [token.surface for token in self.tagger(example[preprocessor.input_column])]
+            words = [
+                token.surface
+                for token in self.tagger(example[preprocessor.input_column])
+            ]
             prompt = words[: self.num_prompt]
             if preprocessor.lang == "ja":
                 _text = "".join(prompt)
@@ -40,7 +45,9 @@ class AutoRegressiveAugmentor(Augmentor):
 
         truncateds = dataset.map(truncate_words)
 
-        def attach_generated_words(example: Dict[str, Any], index: int) -> Dict[str, Any]:
+        def attach_generated_words(
+            example: Dict[str, Any], index: int
+        ) -> Dict[str, Any]:
 
             formatted_truncated = self.tokenizer.encode(
                 truncateds[index][preprocessor.input_column], return_tensors="pt"
@@ -48,13 +55,13 @@ class AutoRegressiveAugmentor(Augmentor):
 
             # tutorial
             # https://huggingface.co/blog/how-to-generate
-            max_length = int(truncateds[index]["original_length"] * self.max_length_factor)
+            # max_length = int(truncateds[index]["original_length"] * self.max_length_factor)
             generated = self.model.generate(
                 formatted_truncated,
                 num_beams=5,
                 no_repeat_ngram_size=2,
                 early_stopping=True,
-                max_length=max_length,
+                max_length=preprocessor.max_length,
             )
 
             _text = self.tokenizer.decode(generated[0], skip_special_tokens=True)
