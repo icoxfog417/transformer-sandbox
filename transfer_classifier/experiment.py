@@ -81,19 +81,13 @@ def write_dataset(
                 tokenizer=tokenizer,
                 num_prompt=num_prompt,
                 max_length_factor=max_length_factor,
-                discriminator=discriminator_model,
-                threshold=threshold,
             )
         else:
             model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
             model = AutoModelForMaskedLM.from_pretrained(model_name)
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             augmentor = AutoEncoderAugmentor(
-                model=model,
-                tokenizer=tokenizer,
-                replace_rate=replace_rate,
-                discriminator=discriminator_model,
-                threshold=threshold,
+                model=model, tokenizer=tokenizer, replace_rate=replace_rate
             )
         return augmentor
 
@@ -106,7 +100,13 @@ def write_dataset(
         print(f"Iteration {i}")
         samples = dataset.shuffle().select(range(num_samples))
         augmentor = create_augmentor(augment_method)
-        augmenteds = augmentor.augment(samples, review)
+        augmenteds = augmentor.augment(
+            dataset=samples,
+            preprocessor=review,
+            num_trial=2,
+            discriminator=discriminator_model,
+            threshold=threshold,
+        )
 
         augmented_dataset = []
         for sample in samples:
