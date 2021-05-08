@@ -48,12 +48,19 @@ def write_dataset(
         max_length=max_length,
         lang="ja",
     )
+    path = Path(f"./{save_folder}")
+    if not path.exists():
+        path.mkdir()
 
     # Define evaluation setting
     dataset = review.load("train")
 
     discriminator_model = None
     if discriminator:
+        df = pd.DataFrame(dataset.shuffle().select(range(num_samples)))
+        file_name = f"{augment_method}_discriminator.csv"
+        print(f"Save {len(samples)} samples for discriminator to {file_name}.")
+        df.to_csv(path.joinpath(file_name), index=False)
         discriminator_model = train_experiment(
             input_column=input_column,
             augment_method=augment_method,
@@ -121,12 +128,11 @@ def write_dataset(
                 }
             )
 
-        path = Path(f"./{save_folder}")
-        if not path.exists():
-            path.mkdir()
         df = pd.DataFrame(augmented_dataset)
         file_name = f"{augment_method}_{i}.csv"
-        print(f"Save {len(samples)} samples and {len(augmenteds)} augmented data to {file_name}.")
+        print(
+            f"Save {len(samples)} samples and {len(augmenteds)} augmented data to {file_name}."
+        )
         df.to_csv(path.joinpath(file_name), index=False)
         dfs.append(df)
 
@@ -175,7 +181,9 @@ def train_experiment(
     for i in range(range_from, range_to):
         file_name = f"{augment_method}_{i}.csv"
         dataset = load_dataset("csv", data_files=str(path.joinpath(file_name)))["train"]
-        validation_samples = review.format(validation_dataset.shuffle()).select(range(len(dataset)))
+        validation_samples = review.format(validation_dataset.shuffle()).select(
+            range(len(dataset))
+        )
 
         print(f"Iteration {i}")
         for kind in ("original", "augmented"):
