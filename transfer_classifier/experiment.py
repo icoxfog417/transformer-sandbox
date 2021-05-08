@@ -59,7 +59,7 @@ def write_dataset(
     if discriminator:
         df = pd.DataFrame(dataset.shuffle().select(range(num_samples)))
         file_name = f"{augment_method}_discriminator.csv"
-        print(f"Save {len(samples)} samples for discriminator to {file_name}.")
+        print(f"Save {num_samples} samples for discriminator to {file_name}.")
         df.to_csv(path.joinpath(file_name), index=False)
         discriminator_model = train_experiment(
             input_column=input_column,
