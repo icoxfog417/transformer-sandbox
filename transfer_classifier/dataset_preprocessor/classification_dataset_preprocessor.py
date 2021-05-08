@@ -55,11 +55,7 @@ class ClassificationDatasetPreprocessor:
             _label_function = label_return
 
         def encode(example: Dict[str, List[Any]]) -> Dict[str, np.ndarray]:
-            labels = {
-                "labels": np.array(
-                    [_label_function(s) for s in example[self.label_column]]
-                )
-            }
+            labels = {"labels": np.array([_label_function(s) for s in example[self.label_column]])}
             return labels
 
         return dataset.map(encode, batched=self.batched)

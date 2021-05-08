@@ -1,27 +1,27 @@
-from pathlib import Path
 import shutil
+from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
 import pandas as pd
+from augmentor.augmentor import Augmentor
+from augmentor.autoencoder_augmentor import AutoEncoderAugmentor
+from augmentor.autoregressive_augmentor import AutoRegressiveAugmentor
+from dataset_preprocessor.amazon_review import AmazonReview
 from datasets import load_dataset
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from transformers import (
+    AutoModelForCausalLM,
     AutoModelForMaskedLM,
     AutoModelForSequenceClassification,
-    AutoModelForCausalLM,
-    T5Tokenizer,
     AutoTokenizer,
     EarlyStoppingCallback,
     EvalPrediction,
     PreTrainedModel,
+    T5Tokenizer,
     Trainer,
     TrainingArguments,
 )
-from dataset_preprocessor.amazon_review import AmazonReview
-from augmentor.augmentor import Augmentor
-from augmentor.autoencoder_augmentor import AutoEncoderAugmentor
-from augmentor.autoregressive_augmentor import AutoRegressiveAugmentor
 
 
 def write_dataset(
@@ -35,7 +35,9 @@ def write_dataset(
     max_length: int = 128,
     replace_rate: float = 0.3,
     num_prompt: int = 3,
-    max_length_factor: float = 3,
+    max_length_factor: float = 1.1,
+    discriminator: bool = False,
+    threshold: float = 0.6,
 ) -> List[pd.DataFrame]:
 
     # Read data
@@ -50,6 +52,18 @@ def write_dataset(
     # Define evaluation setting
     dataset = review.load("train")
 
+    discriminator_model = None
+    if discriminator:
+        discriminator_model = train_experiment(
+            input_column=input_column,
+            augment_method=augment_method,
+            save_folder=save_folder,
+            range_from=0,
+            range_to=1,
+            max_length=max_length,
+            model_name=model_name,
+        )
+
     def create_augmentor(augment_method: str) -> Augmentor:
 
         if augment_method == "autoregressive":
@@ -61,13 +75,19 @@ def write_dataset(
                 tokenizer=tokenizer,
                 num_prompt=num_prompt,
                 max_length_factor=max_length_factor,
+                discriminator=discriminator_model,
+                threshold=threshold,
             )
         else:
             model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
             model = AutoModelForMaskedLM.from_pretrained(model_name)
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             augmentor = AutoEncoderAugmentor(
-                model=model, tokenizer=tokenizer, replace_rate=replace_rate
+                model=model,
+                tokenizer=tokenizer,
+                replace_rate=replace_rate,
+                discriminator=discriminator_model,
+                threshold=threshold,
             )
         return augmentor
 
@@ -106,9 +126,7 @@ def write_dataset(
             path.mkdir()
         df = pd.DataFrame(augmented_dataset)
         file_name = f"{augment_method}_{i}.csv"
-        print(
-            f"Save {len(samples)} samples and {len(augmenteds)} augmented data to {file_name}."
-        )
+        print(f"Save {len(samples)} samples and {len(augmenteds)} augmented data to {file_name}.")
         df.to_csv(path.joinpath(file_name), index=False)
         dfs.append(df)
 
@@ -157,9 +175,7 @@ def train_experiment(
     for i in range(range_from, range_to):
         file_name = f"{augment_method}_{i}.csv"
         dataset = load_dataset("csv", data_files=str(path.joinpath(file_name)))["train"]
-        validation_samples = review.format(validation_dataset.shuffle()).select(
-            range(len(dataset))
-        )
+        validation_samples = review.format(validation_dataset.shuffle()).select(range(len(dataset)))
 
         print(f"Iteration {i}")
         for kind in ("original", "augmented"):

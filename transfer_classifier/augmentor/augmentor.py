@@ -19,7 +19,7 @@ class Augmentor:
         self,
         dataset: Dataset,
         preprocessor: ClassificationDatasetPreprocessor,
-        num_trial: int = 1,
+        num_trial: int = 2,
         discriminator: PreTrainedModel = None,
         threshold: float = 0.8,
     ) -> BatchEncoding:
