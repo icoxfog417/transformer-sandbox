@@ -70,7 +70,9 @@ def write_dataset(
         path.mkdir()
 
     # Define evaluation setting
-    preprocessor = load_dataset_preprocessor(dataset_name, input_column, label_column, max_length)
+    preprocessor = load_dataset_preprocessor(
+        dataset_name, input_column, label_column, max_length
+    )
 
     dataset = preprocessor.load("train")
 
@@ -111,7 +113,9 @@ def write_dataset(
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
         model = AutoModelForMaskedLM.from_pretrained(model_name)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        augmentor = aug.AutoEncoderAugmentor(model=model, tokenizer=tokenizer, replace_rate=replace_rate)
+        augmentor = aug.AutoEncoderAugmentor(
+            model=model, tokenizer=tokenizer, replace_rate=replace_rate
+        )
 
     for i in range(range_from, range_to):
         print(f"Iteration {i}")
@@ -137,7 +141,10 @@ def write_dataset(
 
 
 def train_experiment(
-    directory: str,
+    augment_method: str = "autoencoder",
+    dataset_name: str = "amazon_review",
+    input_column: str = "review_title",
+    discriminator: bool = False,
     save_folder: str = "experiments",
     range_from: int = 0,
     range_to: int = 5,
@@ -164,19 +171,29 @@ def train_experiment(
             "f1": f1,
         }
 
-    naming = directory.split("_")
+    directory = (
+        f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}"
+    )
     num_labels = 2
-    if naming[0] == "livedoor":
+    if dataset_name == "livedoor":
         num_labels = dp.Livedoor.NUM_CLASS
     else:
         num_labels = dp.AmazonReview.NUM_CLASS
 
-    model = AutoModelForSequenceClassification.from_pretrained(CLASSIFICATION_MODEL_NAME, num_labels=num_labels)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        CLASSIFICATION_MODEL_NAME, num_labels=num_labels
+    )
     tokenizer = AutoTokenizer.from_pretrained(CLASSIFICATION_MODEL_NAME)
 
     path = Path(f"./{save_folder}")
     index = 0
-    for index, sample_path in enumerate([d for d in path.joinpath(directory).iterdir() if d.is_dir()]):
+    for index, sample_path in enumerate(
+        [d for d in path.joinpath(directory).iterdir() if d.is_dir()]
+    ):
+        if index < range_from:
+            continue
+        elif index >= range_to:
+            break
         dataset = AugmentedDataset(str(sample_path.parent), sample_path.name)
         samples = dataset.load_dataset()["train"]
         validation = dataset.load_dataset()["validation"]
