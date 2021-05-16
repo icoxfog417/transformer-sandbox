@@ -215,7 +215,6 @@ def train_experiment(
         elif index >= range_to:
             break
         augmented = AugmentedDataset(str(sample_path.parent), sample_path.name)
-        samples = augmented.load_dataset()["train"]
         validation_samples = augmented.load_dataset()["validation"]
         validation_samples = augmented.format(
             dataset=validation_samples,
@@ -227,6 +226,7 @@ def train_experiment(
 
         print(f"Iteration {index}")
         for kind in ("original", "augmented"):
+            samples = augmented.load_dataset()["train"]
             if compare:
                 if kind == "original":
                     samples = samples.filter(

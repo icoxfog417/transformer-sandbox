@@ -51,8 +51,9 @@ class Livedoor(ClassificationDatasetPreprocessor):
             return dataset_path.parent
 
         dataset = []
-        for label, directory in enumerate([d for d in text_path.iterdir() if d.is_dir()]):
-            sample = {"labels": label, "label_name": directory.name}
+        for label, directory in enumerate(
+            [d for d in text_path.iterdir() if d.is_dir()]
+        ):
             for text in directory.glob("*.txt"):
                 if text.name.startswith(directory.name):
                     lines = []
@@ -61,6 +62,7 @@ class Livedoor(ClassificationDatasetPreprocessor):
 
                     url, time, title, *bodies = lines
                     body = "\n".join(bodies)
+                    sample = {"labels": label, "label_name": directory.name}
                     sample["url"] = url
                     sample["time"] = time
                     sample["title"] = title
