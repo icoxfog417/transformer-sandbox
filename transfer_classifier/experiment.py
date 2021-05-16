@@ -5,7 +5,6 @@ from typing import Dict
 import augmentor as aug
 import dataset_preprocessor as dp
 import numpy as np
-import pandas as pd
 from augmented_dataset import AugmentedDataset
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from transformers import (
@@ -77,8 +76,8 @@ def write_dataset(
 
     discriminator_model = None
     if discriminator:
-        directory = f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}_model"
-        dataset = AugmentedDataset(path, directory)
+        directory = f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}"
+        dataset = AugmentedDataset(path.joinpath(directory), str("model"))
         print(f"Save {num_samples} samples for discriminator to {directory}.")
 
         dataset.save_dataset(
@@ -116,8 +115,8 @@ def write_dataset(
 
     for i in range(range_from, range_to):
         print(f"Iteration {i}")
-        directory = f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}_{i}"
-        dataset = AugmentedDataset(path, directory)
+        directory = f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}"
+        dataset = AugmentedDataset(path.joinpath(directory), str(i))
         samples = dataset.shuffle().select(range(num_samples))
         augmenteds = augmentor.augment(
             dataset=samples,
@@ -176,20 +175,17 @@ def train_experiment(
     tokenizer = AutoTokenizer.from_pretrained(CLASSIFICATION_MODEL_NAME)
 
     path = Path(f"./{save_folder}")
-    dataset = AugmentedDataset(path, directory)
-    validation = dataset.load_dataset()["validation"]
-    for i in range(range_from, range_to):
+    index = 0
+    for index, sample_path in enumerate([d for d in path.joinpath(directory).iterdir() if d.is_dir()]):
+        dataset = AugmentedDataset(str(sample_path.parent), sample_path.name)
         samples = dataset.load_dataset()["train"]
+        validation = dataset.load_dataset()["validation"]
 
-        print(f"Iteration {i}")
+        print(f"Iteration {index}")
         for kind in ("original", "augmented"):
-            if not compare:
-                samples = dataset
-            else:
+            if compare:
                 if kind == "original":
                     samples = dataset.filter(lambda e: e[dataset._kind_column] == kind)
-                else:
-                    samples = dataset  # include all dataset
 
             samples = dataset.format(
                 dataset=samples,
@@ -198,18 +194,18 @@ def train_experiment(
                 max_length=max_length,
                 padding=padding,
             )
-            if Path(f"./results/{directory}/run_{i}").exists():
-                shutil.rmtree(f"./results/{directory}/run_{i}")
+            if Path(f"./results/{directory}/{index}").exists():
+                shutil.rmtree(f"./results/{directory}/{index}")
 
             training_args = TrainingArguments(
-                output_dir=f"./results/{directory}/run_{i + 1}",  # output directory
+                output_dir=f"./results/{directory}/{index + 1}",  # output directory
                 num_train_epochs=3,  # total number of training epochs
                 load_best_model_at_end=True,
                 per_device_train_batch_size=batch_size,
                 per_device_eval_batch_size=32,
                 evaluation_strategy="steps",
                 eval_steps=len(samples) // batch_size // eval_interval,
-                logging_dir=f"./logs/{directory}/log_{i + 1}",  # directory for storing logs
+                logging_dir=f"./logs/{directory}/{index + 1}",  # directory for storing logs
             )
 
             trainer = Trainer(

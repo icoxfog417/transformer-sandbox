@@ -1,12 +1,13 @@
 from pathlib import Path
 from typing import Any, Dict, List
+
 import pandas as pd
-from datasets.arrow_dataset import Dataset
 from datasets import load_dataset
-from transformers.tokenization_utils import BatchEncoding, PreTrainedTokenizer
+from datasets.arrow_dataset import Dataset
 from transfer_classifier.dataset_preprocessor.classification_dataset_preprocessor import (
     ClassificationDatasetPreprocessor,
 )
+from transformers.tokenization_utils import BatchEncoding, PreTrainedTokenizer
 
 
 class AugmentedDataset:
