@@ -35,7 +35,10 @@ class AugmentedDataset:
 
         for split_kind in ["train", "validation", "test"]:
             if split_kind == "train":
-                dataset = {"original": original, "augmented": augmented}
+                if len(augmented) > 0:
+                    dataset = {"original": original, "augmented": augmented}
+                else:
+                    dataset = {"original": original}
             elif split_kind == "validation":
                 dataset = {"original": validation}
             elif split_kind == "test":
