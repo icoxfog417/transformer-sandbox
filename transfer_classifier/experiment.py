@@ -30,11 +30,13 @@ def load_dataset_preprocessor(
     dataset_name: str, input_column: str, label_column: str, max_length: int = 128
 ) -> ClassificationDatasetPreprocessor:
     # Read data
+    tokenizer = AutoTokenizer.from_pretrained(CLASSIFICATION_MODEL_NAME)
+
     if dataset_name == "livedoor":
         preprocessor = dp.Livedoor(
             input_column=input_column,
             label_column=label_column,
-            tokenizer=None,
+            tokenizer=tokenizer,
             max_length=max_length,
             lang="ja",
         )
@@ -42,7 +44,7 @@ def load_dataset_preprocessor(
         preprocessor = dp.AmazonReview(
             input_column=input_column,
             label_column=label_column,
-            tokenizer=None,
+            tokenizer=tokenizer,
             max_length=max_length,
             lang="ja",
         )
