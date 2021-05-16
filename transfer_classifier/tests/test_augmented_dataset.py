@@ -34,7 +34,14 @@ class TestAugmentedDataset:
         dataset.save_dataset(review, original, augmented, validation, test)
         loaded_dataset = dataset.load_dataset()
         assert len(loaded_dataset["train"]) == 20
-        assert len(loaded_dataset["train"].filter(lambda e: e["_kind"] == "augmented")) == 10
+        assert (
+            len(
+                loaded_dataset["train"].filter(
+                    lambda e: e[dataset._kind_column] == "augmented"
+                )
+            )
+            == 10
+        )
         assert len(loaded_dataset["validation"]) == 11
         assert len(loaded_dataset["test"]) == 12
-        assert loaded_dataset["train"][10]["review_title"].startswith("X")
+        assert loaded_dataset["train"][10][dataset._input_column].startswith("X")

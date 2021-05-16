@@ -16,7 +16,7 @@ class AugmentedDataset:
         self._directory = directory
         self._input_column = "inputs"
         self._label_column = "labels"
-        self._kind_column = "kinds"
+        self._kind_column = "_kinds"
 
     @property
     def path(self) -> Path:
@@ -42,9 +42,9 @@ class AugmentedDataset:
                 dataset = {"original": test}
 
             samples = []
-            dataset = preprocessor.format_labels(dataset)
             for kind in dataset:
-                for sample in dataset[kind]:
+                _dataset = preprocessor.format_labels(dataset[kind])
+                for sample in _dataset:
                     _sample = {
                         self._input_column: sample[preprocessor.input_column],
                         self._label_column: sample["labels"],

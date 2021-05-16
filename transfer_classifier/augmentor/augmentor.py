@@ -32,10 +32,16 @@ class Augmentor:
             original = dataset.shuffle()
             augmented = self.generate(original, preprocessor)
             if discriminator is not None and preprocessor is not None:
-                matched, log = self.discriminate(discriminator, preprocessor, original, augmented, threshold)
+                matched, log = self.discriminate(
+                    discriminator, preprocessor, original, augmented, threshold
+                )
 
-                def unmatched_to_invalid(example: Dict[str, Any], index: int) -> Dict[str, Any]:
-                    example[self.__AUGMENTATION_VALID__] = True if index in matched else False
+                def unmatched_to_invalid(
+                    example: Dict[str, Any], index: int
+                ) -> Dict[str, Any]:
+                    example[self.__AUGMENTATION_VALID__] = (
+                        True if index in matched else False
+                    )
                     return example
 
                 augmented = augmented.map(unmatched_to_invalid, with_indices=True)
@@ -54,12 +60,16 @@ class Augmentor:
                 break
 
         if augmented_samples is not None:
-            augmented_samples = augmented_samples.remove_columns([self.__AUGMENTATION_VALID__])
+            augmented_samples = augmented_samples.remove_columns(
+                [self.__AUGMENTATION_VALID__]
+            )
             augmented_samples = augmented_samples.flatten_indices()
 
         return augmented_samples
 
-    def generate(self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor) -> BatchEncoding:
+    def generate(
+        self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor
+    ) -> BatchEncoding:
         raise NotImplementedError("Augmentor subclass should implement augment_sample.")
 
     def discriminate(
@@ -82,7 +92,10 @@ class Augmentor:
         for i, original, original_score, augmented, augmented_score in zip(
             range(len(original)), original, original_scores, augmented, augmented_scores
         ):
-            if original_score["label"] == augmented_score["label"] and augmented_score["score"] >= threshold:
+            if (
+                original_score["label"] == augmented_score["label"]
+                and augmented_score["score"] >= threshold
+            ):
                 matched.append(i)
 
             logs.append(
@@ -118,4 +131,7 @@ class Augmentor:
             predictions = outputs[0].cpu().numpy()
 
         scores = np.exp(predictions) / np.exp(predictions).sum(-1, keepdims=True)
-        return [{"label": model.config.id2label[item.argmax()], "score": item.max().item()} for item in scores]
+        return [
+            {"label": model.config.id2label[item.argmax()], "score": item.max().item()}
+            for item in scores
+        ]
