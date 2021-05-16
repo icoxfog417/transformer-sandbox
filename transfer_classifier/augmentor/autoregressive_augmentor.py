@@ -25,14 +25,9 @@ class AutoRegressiveAugmentor(Augmentor):
         self.max_length_factor = max_length_factor
         self.tagger = GenericTagger()  # Only Japanese support now
 
-    def generate(
-        self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor
-    ) -> BatchEncoding:
+    def generate(self, dataset: Dataset, preprocessor: ClassificationDatasetPreprocessor) -> BatchEncoding:
         def truncate_words(example: Dict[str, Any]) -> Dict[str, Any]:
-            words = [
-                token.surface
-                for token in self.tagger(example[preprocessor.input_column])
-            ]
+            words = [token.surface for token in self.tagger(example[preprocessor.input_column])]
             prompt = words[: self.num_prompt]
             if preprocessor.lang == "ja":
                 _text = "".join(prompt)
@@ -45,9 +40,7 @@ class AutoRegressiveAugmentor(Augmentor):
 
         truncateds = dataset.map(truncate_words)
 
-        def attach_generated_words(
-            example: Dict[str, Any], index: int
-        ) -> Dict[str, Any]:
+        def attach_generated_words(example: Dict[str, Any], index: int) -> Dict[str, Any]:
 
             formatted_truncated = self.tokenizer.encode(
                 truncateds[index][preprocessor.input_column], return_tensors="pt"

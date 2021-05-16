@@ -9,6 +9,8 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 
 
 class AmazonReview(ClassificationDatasetPreprocessor):
+    NUM_CLASS = 2
+
     def __init__(
         self,
         input_column: str,

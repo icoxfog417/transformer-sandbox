@@ -1,5 +1,5 @@
-from transfer_classifier.dataset_preprocessor.livedoor import Livedoor
 import pandas as pd
+from transfer_classifier.dataset_preprocessor.livedoor import Livedoor
 
 
 class TestLivedoor:

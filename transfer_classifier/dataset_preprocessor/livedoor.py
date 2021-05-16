@@ -1,9 +1,8 @@
-from typing import Dict
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
-from datasets import DownloadManager
-from datasets import load_dataset
+import pandas as pd
+from datasets import DownloadManager, load_dataset
 from datasets.arrow_dataset import Dataset
 from transfer_classifier.dataset_preprocessor.classification_dataset_preprocessor import (
     ClassificationDatasetPreprocessor,
@@ -12,6 +11,8 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 
 
 class Livedoor(ClassificationDatasetPreprocessor):
+    NUM_CLASS = 9
+
     def __init__(
         self,
         input_column: str,
@@ -39,7 +40,7 @@ class Livedoor(ClassificationDatasetPreprocessor):
         self.validation_size = validation_size
         self.test_size = test_size
 
-    def save(self, force: bool = False):
+    def save(self, force: bool = False) -> Path:
         url = "https://www.rondhuit.com/download/ldcc-20140209.tar.gz"
         manager = DownloadManager()
         expanded_path = manager.download_and_extract(url)
@@ -50,9 +51,7 @@ class Livedoor(ClassificationDatasetPreprocessor):
             return dataset_path.parent
 
         dataset = []
-        for label, directory in enumerate(
-            [d for d in text_path.iterdir() if d.is_dir()]
-        ):
+        for label, directory in enumerate([d for d in text_path.iterdir() if d.is_dir()]):
             sample = {"labels": label, "label_name": directory.name}
             for text in directory.glob("*.txt"):
                 if text.name.startswith(directory.name):

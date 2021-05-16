@@ -1,15 +1,16 @@
-import shutil
 import os
-from typing import Dict, Any
+import shutil
 from pathlib import Path
+from typing import Any, Dict, Generator
+
 import pytest
 from datasets import load_dataset
-from transfer_classifier.augmentor.augmented_dataset import AugmentedDataset
-from transformers import AutoTokenizer
+from transfer_classifier.augmented_dataset import AugmentedDataset
+from transfer_classifier.dataset_preprocessor.amazon_review import AmazonReview
 
 
 @pytest.fixture
-def test_path():
+def test_path() -> Generator[str, None, None]:
     path = Path(os.path.dirname(__file__)).joinpath("test_augmented")
     path.mkdir(parents=True, exist_ok=True)
     yield str(path)
@@ -17,7 +18,7 @@ def test_path():
 
 
 class TestAugmentedDataset:
-    def test_save_dataset(self, test_path) -> None:
+    def test_save_dataset(self, test_path: str) -> None:
         dataset = AugmentedDataset(test_path, "test_save")
         original = load_dataset("amazon_reviews_multi", "ja", split="test[:10]")
         augmented = load_dataset("amazon_reviews_multi", "ja", split="test[:10]")
@@ -29,14 +30,11 @@ class TestAugmentedDataset:
             return example
 
         augmented = augmented.map(augment)
-        print(augmented[0]["review_title"])
-        dataset.save_dataset(original, augmented, validation, test)
+        review = AmazonReview(input_column="review_title", label_column="stars")
+        dataset.save_dataset(review, original, augmented, validation, test)
         loaded_dataset = dataset.load_dataset()
         assert len(loaded_dataset["train"]) == 20
-        assert (
-            len(loaded_dataset["train"].filter(lambda e: e["_kind"] == "augmented"))
-            == 10
-        )
+        assert len(loaded_dataset["train"].filter(lambda e: e["_kind"] == "augmented")) == 10
         assert len(loaded_dataset["validation"]) == 11
         assert len(loaded_dataset["test"]) == 12
         assert loaded_dataset["train"][10]["review_title"].startswith("X")
