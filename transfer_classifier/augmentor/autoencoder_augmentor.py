@@ -42,7 +42,7 @@ class AutoEncoderAugmentor(Augmentor):
         tokens = list(self.tagger(_text))
         indexes = []
         if isinstance(self.replace_rate, int):
-            indexes = random.sample(range(len(tokens)), 1)
+            indexes = random.sample(range(len(tokens)), self.replace_rate)
         else:
             indexes = random.sample(range(len(tokens)), ceil(len(tokens) * self.replace_rate))
 

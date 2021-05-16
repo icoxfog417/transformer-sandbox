@@ -51,9 +51,7 @@ class Livedoor(ClassificationDatasetPreprocessor):
             return dataset_path.parent
 
         dataset = []
-        for label, directory in enumerate(
-            [d for d in text_path.iterdir() if d.is_dir()]
-        ):
+        for label, directory in enumerate([d for d in text_path.iterdir() if d.is_dir()]):
             for text in directory.glob("*.txt"):
                 if text.name.startswith(directory.name):
                     lines = []

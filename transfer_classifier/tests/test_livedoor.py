@@ -27,13 +27,8 @@ class TestLivedoor:
 
         assert all.url.nunique() == len(all)
 
-        assert (
-            pd.read_csv(dataset_root.joinpath("train.csv")).url.nunique() == train_size
-        )
-        assert (
-            pd.read_csv(dataset_root.joinpath("validation.csv")).url.nunique()
-            == validation_size
-        )
+        assert pd.read_csv(dataset_root.joinpath("train.csv")).url.nunique() == train_size
+        assert pd.read_csv(dataset_root.joinpath("validation.csv")).url.nunique() == validation_size
         assert pd.read_csv(dataset_root.joinpath("test.csv")).url.nunique() == test_size
 
         assert all.labels.nunique() == 9
