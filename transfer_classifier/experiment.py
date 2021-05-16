@@ -82,12 +82,13 @@ def write_dataset(
     discriminator_model = None
     if discriminator:
         directory = f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}"
-        dataset = AugmentedDataset(path.joinpath(directory), str("model"))
+        samples = dataset.load_dataset()["train"].shuffle().select(range(num_samples))
+        augmented = AugmentedDataset(path.joinpath(directory), str("model"))
         print(f"Save {num_samples} samples for discriminator to {directory}.")
 
-        dataset.save_dataset(
+        augmented.save_dataset(
             preprocessor,
-            dataset.shuffle().select(range(num_samples)),
+            samples,
             [],
             preprocessor.load("validation"),
             preprocessor.load("test"),
@@ -123,7 +124,7 @@ def write_dataset(
     for i in range(range_from, range_to):
         print(f"Iteration {i}")
         directory = f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}"
-        dataset = AugmentedDataset(path.joinpath(directory), str(i))
+        augmented = AugmentedDataset(path.joinpath(directory), str(i))
         samples = dataset.shuffle().select(range(num_samples))
         augmenteds = augmentor.augment(
             dataset=samples,
@@ -132,7 +133,7 @@ def write_dataset(
             discriminator=discriminator_model,
             threshold=threshold,
         )
-        dataset.save_dataset(
+        augmented.save_dataset(
             preprocessor,
             samples,
             augmenteds,
@@ -140,7 +141,7 @@ def write_dataset(
             preprocessor.load("test"),
         )
 
-        print(f"Save dataset to {directory}.")
+        print(f"Save augmented dataset to {directory}.")
 
 
 def train_experiment(
@@ -197,17 +198,19 @@ def train_experiment(
             continue
         elif index >= range_to:
             break
-        dataset = AugmentedDataset(str(sample_path.parent), sample_path.name)
-        samples = dataset.load_dataset()["train"]
-        validation = dataset.load_dataset()["validation"]
+        augmented = AugmentedDataset(str(sample_path.parent), sample_path.name)
+        samples = augmented.load_dataset()["train"]
+        validation = augmented.load_dataset()["validation"]
 
         print(f"Iteration {index}")
         for kind in ("original", "augmented"):
             if compare:
                 if kind == "original":
-                    samples = dataset.filter(lambda e: e[dataset._kind_column] == kind)
+                    samples = samples.filter(
+                        lambda e: e[augmented._kind_column] == kind
+                    )
 
-            samples = dataset.format(
+            samples = augmented.format(
                 dataset=samples,
                 tokenizer=tokenizer,
                 truncation=truncation,
