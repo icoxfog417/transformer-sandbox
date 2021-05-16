@@ -4,6 +4,9 @@ from typing import Dict
 
 import augmentor as aug
 import dataset_preprocessor as dp
+from dataset_preprocessor.classification_dataset_preprocessor import (
+    ClassificationDatasetPreprocessor,
+)
 import numpy as np
 from augmented_dataset import AugmentedDataset
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
@@ -25,7 +28,7 @@ CLASSIFICATION_MODEL_NAME = "cl-tohoku/bert-base-japanese-whole-word-masking"
 
 def load_dataset_preprocessor(
     dataset_name: str, input_column: str, label_column: str, max_length: int = 128
-) -> dp.ClassificationDatasetPreprocessor:
+) -> ClassificationDatasetPreprocessor:
     # Read data
     if dataset_name == "livedoor":
         preprocessor = dp.Livedoor(
