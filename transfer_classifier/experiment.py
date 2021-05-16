@@ -88,7 +88,7 @@ def write_dataset(
     discriminator_model = None
     if discriminator:
         directory = make_directory_name(augment_method, dataset_name, input_column, discriminator)
-        samples = dataset.load_dataset()["train"].shuffle().select(range(num_samples))
+        samples = dataset.shuffle().select(range(num_samples))
         augmented = AugmentedDataset(path.joinpath(directory), str("model"))
         print(f"Save {num_samples} samples for discriminator to {directory}.")
 
