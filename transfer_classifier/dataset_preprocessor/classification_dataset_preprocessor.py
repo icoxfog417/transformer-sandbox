@@ -46,19 +46,21 @@ class ClassificationDatasetPreprocessor:
     ) -> Dataset:
 
         if self.label_function is not None:
-            _label_function: Callable[[Any], int] = self.label_function
+
+            def encode(example: Dict[str, List[Any]]) -> Dict[str, np.ndarray]:
+                labels = {"labels": np.array([self.label_function(s) for s in example[self.label_column]])}  # type: ignore
+                return labels
+
+            return dataset.map(encode, batched=self.batched)
+        elif "labels" not in dataset.column_names:
+
+            def encode(example: Dict[str, List[Any]]) -> Dict[str, np.ndarray]:
+                labels = {"labels": np.array([int(s) for s in example[self.label_column]])}
+                return labels
+
+            return dataset.map(encode, batched=self.batched)
         else:
-
-            def label_return(example: Dict[str, Any]) -> int:
-                return int(example[self.label_column])
-
-            _label_function = label_return
-
-        def encode(example: Dict[str, List[Any]]) -> Dict[str, np.ndarray]:
-            labels = {"labels": np.array([_label_function(s) for s in example[self.label_column]])}
-            return labels
-
-        return dataset.map(encode, batched=self.batched)
+            return dataset
 
     def format(self, dataset: Dataset) -> Dataset:
         tokenized = self.tokenize(dataset)

@@ -34,9 +34,7 @@ class AmazonReview(ClassificationDatasetPreprocessor):
             lang=lang,
         )
 
-    def load(
-        self, split: str, filter_medium_star: bool = True, shuffle: bool = True
-    ) -> Dataset:
+    def load(self, split: str, filter_medium_star: bool = True, shuffle: bool = True) -> Dataset:
         dataset = load_dataset("amazon_reviews_multi", self.lang, split=split)
         dataset = self.format_labels(dataset)
         if filter_medium_star:

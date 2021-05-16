@@ -4,11 +4,9 @@ from typing import Dict
 
 import augmentor as aug
 import dataset_preprocessor as dp
-from dataset_preprocessor.classification_dataset_preprocessor import (
-    ClassificationDatasetPreprocessor,
-)
 import numpy as np
 from augmented_dataset import AugmentedDataset
+from dataset_preprocessor.classification_dataset_preprocessor import ClassificationDatasetPreprocessor
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from transformers import (
     AutoModelForCausalLM,
@@ -73,9 +71,7 @@ def write_dataset(
         path.mkdir()
 
     # Define evaluation setting
-    preprocessor = load_dataset_preprocessor(
-        dataset_name, input_column, label_column, max_length
-    )
+    preprocessor = load_dataset_preprocessor(dataset_name, input_column, label_column, max_length)
 
     dataset = preprocessor.load("train")
 
@@ -117,9 +113,7 @@ def write_dataset(
         model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
         model = AutoModelForMaskedLM.from_pretrained(model_name)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        augmentor = aug.AutoEncoderAugmentor(
-            model=model, tokenizer=tokenizer, replace_rate=replace_rate
-        )
+        augmentor = aug.AutoEncoderAugmentor(model=model, tokenizer=tokenizer, replace_rate=replace_rate)
 
     for i in range(range_from, range_to):
         print(f"Iteration {i}")
@@ -175,25 +169,19 @@ def train_experiment(
             "f1": f1,
         }
 
-    directory = (
-        f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}"
-    )
+    directory = f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}"
     num_labels = 2
     if dataset_name == "livedoor":
         num_labels = dp.Livedoor.NUM_CLASS
     else:
         num_labels = dp.AmazonReview.NUM_CLASS
 
-    model = AutoModelForSequenceClassification.from_pretrained(
-        CLASSIFICATION_MODEL_NAME, num_labels=num_labels
-    )
+    model = AutoModelForSequenceClassification.from_pretrained(CLASSIFICATION_MODEL_NAME, num_labels=num_labels)
     tokenizer = AutoTokenizer.from_pretrained(CLASSIFICATION_MODEL_NAME)
 
     path = Path(f"./{save_folder}")
     index = 0
-    for index, sample_path in enumerate(
-        [d for d in path.joinpath(directory).iterdir() if d.is_dir()]
-    ):
+    for index, sample_path in enumerate([d for d in path.joinpath(directory).iterdir() if d.is_dir()]):
         if index < range_from:
             continue
         elif index >= range_to:
@@ -206,9 +194,7 @@ def train_experiment(
         for kind in ("original", "augmented"):
             if compare:
                 if kind == "original":
-                    samples = samples.filter(
-                        lambda e: e[augmented._kind_column] == kind
-                    )
+                    samples = samples.filter(lambda e: e[augmented._kind_column] == kind)
 
             samples = augmented.format(
                 dataset=samples,
