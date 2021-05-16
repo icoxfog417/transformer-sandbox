@@ -48,6 +48,16 @@ def load_dataset_preprocessor(
     return preprocessor
 
 
+def make_directory_name(
+    augment_method: str = "autoencoder",
+    dataset_name: str = "amazon_review",
+    input_column: str = "review_title",
+    discriminator: bool = False,
+) -> str:
+    name = f"{dataset_name}_{augment_method}_{input_column}{'_D' if discriminator else ''}"
+    return name
+
+
 def write_dataset(
     augment_method: str = "autoencoder",
     dataset_name: str = "amazon_review",
@@ -77,7 +87,7 @@ def write_dataset(
 
     discriminator_model = None
     if discriminator:
-        directory = f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}"
+        directory = make_directory_name(augment_method, dataset_name, input_column, discriminator)
         samples = dataset.load_dataset()["train"].shuffle().select(range(num_samples))
         augmented = AugmentedDataset(path.joinpath(directory), str("model"))
         print(f"Save {num_samples} samples for discriminator to {directory}.")
@@ -117,7 +127,7 @@ def write_dataset(
 
     for i in range(range_from, range_to):
         print(f"Iteration {i}")
-        directory = f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}"
+        directory = make_directory_name(augment_method, dataset_name, input_column, discriminator)
         augmented = AugmentedDataset(path.joinpath(directory), str(i))
         samples = dataset.shuffle().select(range(num_samples))
         augmenteds = augmentor.augment(
@@ -169,7 +179,7 @@ def train_experiment(
             "f1": f1,
         }
 
-    directory = f"{dataset_name}_{augment_method}_{input_column}_{'D' if discriminator else ''}"
+    directory = make_directory_name(augment_method, dataset_name, input_column, discriminator)
     num_labels = 2
     if dataset_name == "livedoor":
         num_labels = dp.Livedoor.NUM_CLASS
@@ -188,7 +198,14 @@ def train_experiment(
             break
         augmented = AugmentedDataset(str(sample_path.parent), sample_path.name)
         samples = augmented.load_dataset()["train"]
-        validation = augmented.load_dataset()["validation"]
+        validation_samples = augmented.load_dataset()["validation"]
+        validation_samples = augmented.format(
+            dataset=validation_samples,
+            tokenizer=tokenizer,
+            truncation=truncation,
+            max_length=max_length,
+            padding=padding,
+        )
 
         print(f"Iteration {index}")
         for kind in ("original", "augmented"):
@@ -222,7 +239,7 @@ def train_experiment(
                 args=training_args,  # training arguments, defined above
                 compute_metrics=compute_metrics,
                 train_dataset=samples,  # training dataset
-                eval_dataset=validation,  # evaluation dataset
+                eval_dataset=validation_samples,  # evaluation dataset
                 callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
             )
 
