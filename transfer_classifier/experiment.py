@@ -248,6 +248,9 @@ def train_experiment(
             if Path(f"./results/{directory}/{kind}").exists():
                 shutil.rmtree(f"./results/{directory}/{kind}")
 
+            eval_steps = len(samples) // batch_size // eval_interval
+            if eval_steps < 1:
+                eval_steps = 1
             training_args = TrainingArguments(
                 output_dir=f"./results/{directory}/{kind}/{index}",  # output directory
                 num_train_epochs=3,  # total number of training epochs
@@ -255,7 +258,7 @@ def train_experiment(
                 per_device_train_batch_size=batch_size,
                 per_device_eval_batch_size=32,
                 evaluation_strategy="steps",
-                eval_steps=len(samples) // batch_size // eval_interval,
+                eval_steps=eval_steps,
                 logging_dir=f"./logs/{directory}/{kind}/{index}",  # directory for storing logs
             )
 
