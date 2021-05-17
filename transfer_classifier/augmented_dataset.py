@@ -35,7 +35,7 @@ class AugmentedDataset:
 
         for split_kind in ["train", "validation", "test"]:
             if split_kind == "train":
-                if len(augmented) > 0:
+                if augmented is not None and len(augmented) > 0:
                     dataset = {"original": original, "augmented": augmented}
                 else:
                     dataset = {"original": original}
