@@ -205,9 +205,6 @@ def train_experiment(
     else:
         num_labels = dp.AmazonReview.NUM_CLASS
 
-    model = AutoModelForSequenceClassification.from_pretrained(
-        CLASSIFICATION_MODEL_NAME, num_labels=num_labels
-    )
     tokenizer = AutoTokenizer.from_pretrained(CLASSIFICATION_MODEL_NAME)
 
     path = Path(f"./{save_folder}")
@@ -215,6 +212,11 @@ def train_experiment(
     for index, sample_path in enumerate(
         [d for d in path.joinpath(directory).iterdir() if d.is_dir()]
     ):
+
+        model = AutoModelForSequenceClassification.from_pretrained(
+            CLASSIFICATION_MODEL_NAME, num_labels=num_labels
+        )
+
         if index < range_from:
             continue
         elif index >= range_to:
